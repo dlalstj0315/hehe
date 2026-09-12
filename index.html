@@ -1,0 +1,2229 @@
+```html
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>민서의 종합 모험 게임</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#080d19;color:#eef4ff;
+ font-family:Arial,"Malgun Gothic",sans-serif
+}
+button,input{
+ font:inherit
+}
+button{
+ border:0;border-radius:12px;padding:11px 14px;
+ background:#293957;color:white;font-weight:800;
+ cursor:pointer;transition:.12s
+}
+button:hover{filter:brightness(1.15);transform:translateY(-1px)}
+button:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.primary{background:#4169e1}
+.good{background:#287a49}
+.danger{background:#9c3d4b}
+#app{max-width:1150px;margin:auto;padding:10px}
+header{
+ background:#151f36;border:1px solid #344463;
+ border-radius:16px;padding:13px;
+ display:flex;justify-content:space-between;gap:10px;
+ align-items:center
+}
+h1,h2,h3{margin-top:0}
+nav{
+ display:flex;gap:6px;overflow:auto;
+ padding:8px 0;position:sticky;top:0;z-index:20;
+ background:#080d19ee
+}
+nav button{white-space:nowrap}
+nav button.active{background:#4169e1}
+.view{display:none}
+.view.active{display:block}
+.panel,.card{
+ background:#151f36;border:1px solid #344463;
+ border-radius:15px;padding:13px;margin-bottom:10px
+}
+.grid{
+ display:grid;grid-template-columns:repeat(4,1fr);gap:8px
+}
+.grid2{
+ display:grid;grid-template-columns:repeat(2,1fr);gap:8px
+}
+.center{text-align:center}
+.big{font-size:30px;font-weight:900}
+.small{font-size:12px;color:#9eabc4}
+.stats{display:flex;gap:6px;flex-wrap:wrap}
+.stat{
+ background:#0c1427;border-radius:9px;padding:6px 9px;
+ font-size:11px;min-width:60px
+}
+.stat b{display:block;color:#ffd166;font-size:15px}
+.bar{
+ height:10px;background:#070c16;
+ border-radius:20px;overflow:hidden;margin:7px 0
+}
+.bar i{display:block;height:100%;background:#4ca9ff}
+.hpbar i{background:#4bd47b}
+.xpbar i{background:#b879ff}
+.enemy{
+ background:#251c35;border:1px solid #4b3565;
+ border-radius:15px;padding:18px;text-align:center
+}
+.enemyName{font-size:28px;font-weight:900}
+.log{
+ height:130px;overflow:auto;background:#070c15;
+ border-radius:10px;padding:9px;font-size:12px;
+ line-height:1.6
+}
+.badge{
+ display:inline-block;padding:5px 8px;
+ background:#0c1427;border-radius:20px;
+ margin:3px;font-size:12px
+}
+.locked{opacity:.45}
+.achievement.done{border-color:#c29a38}
+.miniGrid{
+ display:grid;grid-template-columns:repeat(5,1fr);gap:7px
+}
+.miniGrid button{
+ min-height:58px;font-size:13px
+}
+.target{
+ height:170px;width:100%;font-size:30px
+}
+input{
+ background:#0b1324;color:white;
+ border:1px solid #405171;border-radius:10px;
+ padding:10px;max-width:250px
+}
+.reward{
+ padding:10px;border-radius:10px;
+ background:#10271b;color:#8cffb3
+}
+@media(max-width:750px){
+ header{display:block}
+ .grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:430px){
+ #app{padding:6px}
+ .grid{grid-template-columns:1fr 1fr}
+ .miniGrid{grid-template-columns:repeat(3,1fr)}
+ button{padding:10px 9px}
+}
+</style>
+</head>
+
+<body>
+<div id="app">
+
+<header>
+ <div>
+  <h2>민서의 종합 모험 게임</h2>
+  <div class="small">탐험 · 전투 · 클릭 · 미니게임 · 수집 · 제작 · 200 업적</div>
+ </div>
+
+ <div class="stats">
+  <div class="stat">LV<b id="lv">1</b></div>
+  <div class="stat">HP<b id="hp">100</b></div>
+  <div class="stat">G<b id="gold">80</b></div>
+  <div class="stat">업적<b id="ach">0/200</b></div>
+ </div>
+</header>
+
+<nav id="nav"></nav>
+<main id="main"></main>
+
+</div>
+
+<script>
+"use strict";
+
+/* =========================
+   기본 데이터
+========================= */
+
+const SAVE_KEY="MINSEO_TOTAL_GAME_5";
+
+const $=id=>document.getElementById(id);
+const rnd=n=>Math.floor(Math.random()*n);
+const pick=a=>a[rnd(a.length)];
+
+let save=null;
+
+try{
+ save=JSON.parse(localStorage.getItem(SAVE_KEY));
+}catch(e){save=null}
+
+save=save||{
+ lv:1,
+ xp:0,
+ gold:80,
+ hp:100,
+ maxHp:100,
+ atk:7,
+ def:2,
+ clickPower:5,
+ region:0,
+ unlocked:[0],
+ monsters:[],
+ items:{
+  potion:2,
+  bomb:1,
+  herb:3,
+  iron:0,
+  crystal:0,
+  gem:0
+ },
+ weapon:"나무 검",
+ combo:0,
+ maxCombo:0,
+ stats:{
+  clicks:0,
+  wins:0,
+  explores:0,
+  miniPlays:0,
+  miniWins:0,
+  goldEarned:80
+ },
+ achievements:{},
+ battle:null
+};
+
+const regions=[
+ ["초보자 마을",1,["슬라임"]],
+ ["푸른 숲",2,["슬라임","고블린"]],
+ ["수정 동굴",4,["박쥐","골렘"]],
+ ["폐허 도시",7,["로봇","망령"]],
+ ["황금 사막",10,["전갈","미라"]],
+ ["고대 신전",14,["수호자","용"]]
+];
+
+const monsters={
+ "슬라임":[35,7,12,8],
+ "고블린":[55,10,18,14],
+ "박쥐":[70,13,25,20],
+ "골렘":[110,18,35,30],
+ "로봇":[135,22,45,40],
+ "망령":[125,25,50,45],
+ "전갈":[160,28,60,55],
+ "미라":[185,31,70,70],
+ "수호자":[270,36,120,130],
+ "용":[700,48,350,600]
+};
+
+const shopItems={
+ potion:["물약",25],
+ bomb:["폭탄",45],
+ herb:["약초",10],
+ iron:["철광석",30],
+ crystal:["수정",60],
+ gem:["보석",150]
+};
+
+/* =========================
+   저장 / 보상
+========================= */
+
+function saveGame(){
+ localStorage.setItem(SAVE_KEY,JSON.stringify(save));
+}
+
+function toast(text){
+ alert(text);
+}
+
+function earnGold(n){
+ save.gold+=n;
+ save.stats.goldEarned+=n;
+}
+
+function exp(n){
+ save.xp+=n;
+
+ while(save.xp>=40+save.lv*25){
+  save.xp-=40+save.lv*25;
+  save.lv++;
+  save.maxHp+=12;
+  save.hp=save.maxHp;
+  save.atk+=2;
+  save.def+=1;
+  toast("레벨 업! LV "+save.lv);
+ }
+}
+
+function safeHP(){
+ save.hp=Math.max(0,Math.min(save.hp,save.maxHp));
+}
+
+function resetCombo(){
+ save.combo=0;
+}
+
+/* =========================
+   화면
+========================= */
+
+const tabs=[
+ ["home","홈"],
+ ["adventure","모험"],
+ ["battle","전투"],
+ ["click","클릭"],
+ ["mini","미니게임"],
+ ["shop","상점"],
+ ["bag","가방"],
+ ["craft","제작"],
+ ["book","도감"],
+ ["ach","업적"]
+];
+
+function makeViews(){
+ $("main").innerHTML=tabs.map(t=>
+  `<section class="view" id="v_${t[0]}"></section>`
+ ).join("");
+
+ $("nav").innerHTML=tabs.map(t=>
+  `<button data-view="${t[0]}">${t[1]}</button>`
+ ).join("");
+
+ $("nav").onclick=e=>{
+  const b=e.target.closest("button");
+  if(!b)return;
+  show(b.dataset.view);
+ };
+}
+
+function show(view){
+ renderAll();
+
+ document.querySelectorAll(".view").forEach(x=>{
+  x.classList.toggle("active",x.id==="v_"+view);
+ });
+
+ document.querySelectorAll("nav button").forEach(x=>{
+  x.classList.toggle("active",x.dataset.view===view);
+ });
+
+ window.scrollTo(0,0);
+}
+
+function header(){
+ $("lv").textContent=save.lv;
+ $("hp").textContent=save.hp+"/"+save.maxHp;
+ $("gold").textContent=save.gold;
+ $("ach").textContent=Object.keys(save.achievements).length+"/200";
+}
+
+/* =========================
+   홈
+========================= */
+
+function renderHome(){
+ const need=40+save.lv*25;
+
+ $("v_home").innerHTML=`
+ <div class="panel">
+  <div class="big">모험가 LV ${save.lv}</div>
+
+  <div class="bar xpbar">
+   <i style="width:${Math.min(100,save.xp/need*100)}%"></i>
+  </div>
+
+  <div class="small">EXP ${save.xp}/${need}</div>
+
+  <br>
+
+  <div class="stats">
+   <div class="stat">공격<b>${save.atk}</b></div>
+   <div class="stat">방어<b>${save.def}</b></div>
+   <div class="stat">클릭 공격<b>${save.clickPower}</b></div>
+   <div class="stat">무기<b>${save.weapon}</b></div>
+  </div>
+ </div>
+
+ <div class="grid">
+  <div class="card">
+   <h3>모험</h3>
+   <p class="small">지역을 돌아다니며 적과 보물을 발견합니다.</p>
+   <button class="primary" onclick="show('adventure')">탐험</button>
+  </div>
+
+  <div class="card">
+   <h3>전투</h3>
+   <p class="small">몬스터와 직접 싸워 경험치와 골드를 얻습니다.</p>
+   <button class="primary" onclick="show('battle')">전투</button>
+  </div>
+
+  <div class="card">
+   <h3>미니게임</h3>
+   <p class="small">${miniGames.length}종의 미니게임</p>
+   <button class="primary" onclick="show('mini')">플레이</button>
+  </div>
+
+  <div class="card">
+   <h3>클릭 아레나</h3>
+   <p class="small">콤보를 쌓아 골드를 얻으세요.</p>
+   <button class="primary" onclick="show('click')">시작</button>
+  </div>
+ </div>
+
+ <div class="panel">
+  <h3>현재 기록</h3>
+  <div class="small">
+   클릭 ${save.stats.clicks}회 ·
+   승리 ${save.stats.wins}회 ·
+   탐험 ${save.stats.explores}회 ·
+   미니게임 ${save.stats.miniPlays}회
+  </div>
+ </div>
+ `;
+}
+
+/* =========================
+   모험
+========================= */
+
+function renderAdventure(){
+ const r=regions[save.region];
+
+ $("v_adventure").innerHTML=`
+ <div class="panel">
+  <h2>지역 선택</h2>
+  <div class="grid">
+   ${regions.map((a,i)=>{
+    const open=save.lv>=a[1]||save.unlocked.includes(i);
+
+    return `
+    <div class="card ${open?"":"locked"}">
+     <b>${a[0]}</b>
+     <p class="small">필요 LV ${a[1]}</p>
+     <button ${open?"":"disabled"}
+       onclick="chooseRegion(${i})">
+       ${open?"입장":"잠김"}
+     </button>
+    </div>`;
+   }).join("")}
+  </div>
+ </div>
+
+ <div class="panel center">
+  <h2>${r[0]}</h2>
+  <p class="small">등장 몬스터: ${r[2].join(", ")}</p>
+  <button class="primary" onclick="explore()">탐험하기</button>
+  <br><br>
+  <div class="small">
+   탐험 ${save.stats.explores}회
+  </div>
+ </div>
+ `;
+}
+
+function chooseRegion(i){
+ if(save.lv<regions[i][1]&&!save.unlocked.includes(i)){
+  toast("레벨이 부족합니다.");
+  return;
+ }
+
+ save.region=i;
+
+ if(!save.unlocked.includes(i))
+  save.unlocked.push(i);
+
+ saveGame();
+ show("adventure");
+}
+
+function explore(){
+ save.stats.explores++;
+
+ const a=regions[save.region];
+ const n=Math.random();
+
+ if(n<.48){
+  startBattle(pick(a[2]));
+ }
+ else if(n<.65){
+  const g=10+save.region*12+rnd(25);
+  earnGold(g);
+  toast("탐험 중 보물 발견!\n+"+g+"G");
+  exp(10);
+  saveGame();
+  show("adventure");
+ }
+ else if(n<.78){
+  save.items.herb++;
+  save.items.iron++;
+  toast("자원 발견!\n약초 +1\n철광석 +1");
+  exp(8);
+  saveGame();
+  show("adventure");
+ }
+ else if(n<.9){
+  save.hp=Math.min(save.maxHp,save.hp+20);
+  exp(15);
+  toast("숨겨진 휴식 장소를 발견했습니다.\nHP 회복!");
+  saveGame();
+  show("adventure");
+ }
+ else{
+  const g=30+save.region*20;
+  earnGold(g);
+  save.items.gem++;
+  exp(25);
+  toast("희귀 보물 발견!\n보석 +1\n+"+g+"G");
+  saveGame();
+  show("adventure");
+ }
+}
+
+/* =========================
+   전투
+========================= */
+
+function startBattle(name){
+ const m=monsters[name];
+
+ save.battle={
+  name,
+  hp:m[0]+save.lv*5,
+  maxHp:m[0]+save.lv*5,
+  atk:m[1]+Math.floor(save.lv*.7),
+  guard:false
+ };
+
+ saveGame();
+ show("battle");
+}
+
+function attackEnemy(){
+ if(!save.battle)return;
+
+ const b=save.battle;
+
+ let damage=save.atk+save.clickPower;
+
+ if(Math.random()<.12){
+  damage*=2;
+ }
+
+ b.hp-=damage;
+
+ if(b.hp<=0){
+  winBattle();
+  return;
+ }
+
+ enemyAttack();
+ saveGame();
+ renderBattle();
+}
+
+function enemyAttack(){
+ const b=save.battle;
+
+ let damage=Math.max(1,b.atk-save.def);
+
+ if(b.guard){
+  damage=Math.max(1,Math.floor(damage/3));
+  b.guard=false;
+ }
+
+ save.hp-=damage;
+ safeHP();
+
+ if(save.hp<=0){
+  save.hp=Math.floor(save.maxHp*.5);
+  save.battle=null;
+  resetCombo();
+  toast("쓰러졌습니다.\n체력의 절반으로 부활했습니다.");
+ }
+}
+
+function defend(){
+ if(!save.battle)return;
+ save.battle.guard=true;
+ enemyAttack();
+ saveGame();
+ renderBattle();
+}
+
+function usePotion(){
+ if(!save.battle)return;
+
+ if(save.items.potion<=0){
+  toast("물약이 없습니다.");
+  return;
+ }
+
+ save.items.potion--;
+ save.hp=Math.min(save.maxHp,save.hp+45);
+
+ enemyAttack();
+ saveGame();
+ renderBattle();
+}
+
+function useBomb(){
+ if(!save.battle)return;
+
+ if(save.items.bomb<=0){
+  toast("폭탄이 없습니다.");
+  return;
+ }
+
+ save.items.bomb--;
+ save.battle.hp-=70;
+
+ if(save.battle.hp<=0){
+  winBattle();
+  return;
+ }
+
+ enemyAttack();
+ saveGame();
+ renderBattle();
+}
+
+function flee(){
+ if(!save.battle)return;
+
+ save.battle=null;
+ resetCombo();
+ saveGame();
+ show("adventure");
+}
+
+function winBattle(){
+ const name=save.battle.name;
+ const m=monsters[name];
+
+ save.stats.wins++;
+ earnGold(m[3]);
+ exp(m[2]);
+
+ if(!save.monsters.includes(name))
+  save.monsters.push(name);
+
+ if(name==="용"){
+  save.weapon="용의 검";
+  save.atk+=12;
+  toast("용 처치 성공!\n전설 무기 '용의 검' 획득!");
+ }
+ else{
+  toast(name+" 처치!\n+"+m[3]+"G\n+"+m[2]+"EXP");
+ }
+
+ save.battle=null;
+ saveGame();
+ show("adventure");
+}
+
+function renderBattle(){
+ if(!save.battle){
+  $("v_battle").innerHTML=`
+   <div class="panel center">
+    <h2>전투 연습</h2>
+    <p class="small">원하는 몬스터를 골라 싸워보세요.</p>
+    <div class="grid">
+     ${Object.keys(monsters).map(n=>
+      `<button onclick="startBattle('${n}')">${n}</button>`
+     ).join("")}
+    </div>
+   </div>`;
+  return;
+ }
+
+ const b=save.battle;
+
+ $("v_battle").innerHTML=`
+ <div class="panel">
+  <div class="enemy">
+   <div class="enemyName">${b.name}</div>
+   <div class="bar hpbar">
+    <i style="width:${Math.max(0,b.hp)/b.maxHp*100}%"></i>
+   </div>
+   <div>${Math.max(0,b.hp)} / ${b.maxHp}</div>
+  </div>
+ </div>
+
+ <div class="panel">
+  <div class="bar hpbar">
+   <i style="width:${save.hp/save.maxHp*100}%"></i>
+  </div>
+  <div class="small">내 HP ${save.hp}/${save.maxHp}</div>
+
+  <br>
+
+  <div class="grid">
+   <button class="primary" onclick="attackEnemy()">공격</button>
+   <button onclick="defend()">방어</button>
+   <button onclick="usePotion()">물약</button>
+   <button onclick="useBomb()">폭탄</button>
+  </div>
+
+  <br>
+  <button class="danger" onclick="flee()">도망가기</button>
+ </div>
+ `;
+}
+
+/* =========================
+   클릭 아레나
+========================= */
+
+function clickHit(){
+ save.stats.clicks++;
+ save.combo++;
+ save.maxCombo=Math.max(save.maxCombo,save.combo);
+
+ let reward=1;
+
+ if(save.combo%10===0){
+  reward+=5;
+ }
+
+ if(save.combo%25===0){
+  reward+=15;
+ }
+
+ earnGold(reward);
+
+ saveGame();
+ renderClick();
+ header();
+}
+
+function upgradeClick(){
+ const cost=25+save.clickPower*12;
+
+ if(save.gold<cost){
+  toast("골드가 부족합니다.");
+  return;
+ }
+
+ save.gold-=cost;
+ save.clickPower++;
+ saveGame();
+ renderClick();
+ header();
+}
+
+function renderClick(){
+ const cost=25+save.clickPower*12;
+
+ $("v_click").innerHTML=`
+ <div class="panel center">
+  <h2>클릭 아레나</h2>
+
+  <button class="primary target"
+    onclick="clickHit()">CLICK</button>
+
+  <div class="big">${save.combo} COMBO</div>
+
+  <p class="small">
+   최고 콤보 ${save.maxCombo||0}
+  </p>
+
+  <p class="reward">
+   클릭할 때마다 골드 획득
+  </p>
+
+  <button onclick="upgradeClick()">
+   클릭 공격 강화 ${cost}G
+  </button>
+
+  <br><br>
+
+  <button onclick="resetCombo()">콤보 초기화</button>
+ </div>
+ `;
+}
+
+/* =========================
+   미니게임
+========================= */
+
+const miniGames=[
+ ["shoot","사격장"],
+ ["memory","기억력"],
+ ["treasure","보물찾기"],
+ ["reaction","순발력"],
+ ["number","숫자 찾기"],
+ ["sequence","순서 기억"],
+ ["math","암산"],
+ ["odd","다른 칸"],
+ ["safe","안전 칸"],
+ ["sort","숫자 순서"],
+ ["color","색깔"],
+ ["mine","지뢰 피하기"],
+ ["word","단어"],
+ ["lock","비밀번호"],
+ ["tap","탭 러시"],
+ ["fastmath","스피드 암산"],
+ ["chest","황금 상자"],
+ ["luck","행운 보너스"],
+ ["stars","별 수집"],
+ ["meteor","유성 회피"],
+ ["combo","콤보 아레나"],
+ ["guess","숫자 추리"],
+ ["lights","라이트 러시"],
+ ["quick","퀵 드로우"],
+ ["coin","행운 코인"],
+ ["dice","주사위 챌린지"],
+ ["doors","보물 문"],
+ ["timing","타이밍 존"],
+ ["target","퍼펙트 타깃"],
+ ["race","숫자 레이스"],
+ ["wire","안전선 고르기"],
+ ["pattern","패턴 복사"],
+ ["maze","미니 미로"],
+ ["catch","별 잡기"],
+ ["colororder","색 순서"]
+];
+
+let mini=null;
+
+function startMini(type){
+ mini={
+  type,
+  score:0,
+  lives:3,
+  round:0,
+  target:0,
+  input:"",
+  done:false,
+  success:false
+ };
+
+ save.stats.miniPlays++;
+
+ if(type==="shoot"){
+  mini.round=10;
+  mini.target=rnd(12);
+ }
+
+ else if(type==="memory"){
+  mini.round=6;
+  mini.cards=shuffle([...Array(12)].map((_,i)=>Math.floor(i/2)));
+  mini.open=[];
+ }
+
+ else if(type==="treasure"){
+  mini.round=8;
+  mini.target=rnd(16);
+ }
+
+ else if(type==="reaction"||type==="quick"){
+  mini.round=8;
+  mini.ready=false;
+  setTimeout(()=>{
+   if(mini&&mini.type===type&&!mini.done){
+    mini.ready=true;
+    renderMini();
+   }
+  },900+rnd(1500));
+ }
+
+ else if(type==="number"){
+  mini.round=8;
+  mini.target=1+rnd(50);
+ }
+
+ else if(type==="sequence"){
+  mini.round=5;
+  makeSequence();
+ }
+
+ else if(type==="math"||type==="fastmath"){
+  mini.round=7;
+  makeMath(type);
+ }
+
+ else if(type==="odd"||type==="safe"){
+  mini.round=8;
+  mini.target=type==="safe"?rnd(9):rnd(16);
+ }
+
+ else if(type==="sort"){
+  mini.round=5;
+  mini.next=1;
+  mini.numbers=shuffle([1,2,3,4,5,6]);
+ }
+
+ else if(type==="color"){
+  mini.round=8;
+  mini.target=rnd(6);
+ }
+
+ else if(type==="mine"){
+  mini.mines=[];
+  while(mini.mines.length<5){
+   const x=rnd(25);
+   if(!mini.mines.includes(x))mini.mines.push(x);
+  }
+ }
+
+ else if(type==="word"){
+  mini.round=5;
+  makeWord();
+ }
+
+ else if(type==="lock"){
+  mini.lives=5;
+  mini.code=""+(1+rnd(9))+(1+rnd(9))+(1+rnd(9));
+ }
+
+ else if(type==="tap"||type==="combo"){
+  mini.round=20;
+  mini.target=rnd(9);
+  mini.chain=0;
+ }
+
+ else if(type==="fastmath"){
+  mini.round=7;
+ }
+
+ else if(type==="chest"){
+  mini.round=5;
+  mini.target=rnd(9);
+ }
+
+ else if(type==="luck"){
+  mini.target=1+rnd(6);
+ }
+
+ else if(type==="stars"){
+  mini.round=12;
+  mini.target=rnd(12);
+  mini.found=[];
+ }
+
+ else if(type==="meteor"){
+  mini.round=12;
+  mini.target=rnd(16);
+ }
+
+ else if(type==="guess"){
+  mini.round=8;
+  mini.lives=3;
+  mini.target=1+rnd(40);
+  mini.hint="1~40";
+ }
+
+ else if(type==="lights"){
+  mini.round=10;
+  mini.target=rnd(16);
+ }
+
+ else if(type==="coin"){
+  mini.round=8;
+  mini.target=rnd(2);
+ }
+
+ else if(type==="dice"){
+  mini.round=6;
+  mini.target=1+rnd(6);
+ }
+
+ else if(type==="doors"){
+  mini.round=6;
+  mini.target=rnd(6);
+ }
+
+ else if(type==="timing"){
+  mini.round=8;
+  mini.target=rnd(10);
+ }
+
+ else if(type==="target"){
+  mini.round=10;
+  mini.target=rnd(16);
+ }
+
+ else if(type==="race"){
+  mini.round=10;
+  mini.target=1+rnd(9);
+  mini.progress=0;
+ }
+
+ else if(type==="wire"){
+  mini.round=5;
+  mini.target=rnd(6);
+ }
+
+ else if(type==="pattern"){
+  mini.round=5;
+  makePattern();
+ }
+
+ else if(type==="maze"){
+  mini.round=10;
+  mini.target=rnd(9);
+ }
+
+ else if(type==="catch"){
+  mini.round=15;
+  mini.target=rnd(12);
+  mini.found=[];
+ }
+
+ else if(type==="colororder"){
+  mini.round=5;
+  makeColorOrder();
+ }
+
+ saveGame();
+ show("mini");
+}
+
+function shuffle(a){
+ return a.sort(()=>Math.random()-.5);
+}
+
+function makeSequence(){
+ mini.sequence=[1,2,3,4].map(x=>x+rnd(5));
+ mini.seqInput=[];
+ mini.showing=true;
+
+ setTimeout(()=>{
+  if(mini){
+   mini.showing=false;
+   renderMini();
+  }
+ },1100);
+}
+
+function makeMath(type){
+ mini.a=2+rnd(13);
+ mini.b=2+rnd(13);
+
+ if(type==="fastmath")
+  mini.answer=mini.a*mini.b;
+ else
+  mini.answer=mini.a+mini.b;
+
+ mini.input="";
+}
+
+function makeWord(){
+ const words=["모험","보물","용사","신전","숲","마법","전투","기사"];
+ mini.word=pick(words);
+ mini.scrambled=shuffle(mini.word.split("")).join("");
+ mini.input="";
+}
+
+function makePattern(){
+ mini.pattern=[0,1,2].map(()=>rnd(4));
+ mini.patternInput=[];
+ mini.showing=true;
+
+ setTimeout(()=>{
+  if(mini){
+   mini.showing=false;
+   renderMini();
+  }
+ },1000);
+}
+
+function makeColorOrder(){
+ mini.colors=shuffle([0,1,2,3,4]).slice(0,4);
+ mini.colorInput=[];
+ mini.showing=true;
+
+ setTimeout(()=>{
+  if(mini){
+   mini.showing=false;
+   renderMini();
+  }
+ },1000);
+}
+
+function miniAction(i){
+ if(!mini||mini.done)return;
+
+ const m=mini;
+ const t=m.type;
+
+ /* 사격 */
+ if(t==="shoot"){
+  m.round--;
+  if(i===m.target)m.score+=12;
+  else m.lives--;
+
+  m.target=rnd(12);
+
+  if(m.round<=0||m.lives<=0){
+   m.done=true;
+   m.success=m.score>=60;
+  }
+ }
+
+ /* 기억력 */
+ else if(t==="memory"){
+  if(m.open.includes(i)||m.open.length>=2)return;
+
+  m.open.push(i);
+
+  if(m.open.length===2){
+   const [a,b]=m.open;
+
+   setTimeout(()=>{
+    if(!mini)return;
+
+    if(m.cards[a]===m.cards[b]){
+     m.score+=15;
+     m.pairs=(m.pairs||0)+1;
+    }else{
+     m.lives--;
+    }
+
+    m.open=[];
+
+    if((m.pairs||0)>=6){
+     m.done=true;
+     m.success=true;
+    }
+
+    if(m.lives<=0)m.done=true;
+
+    renderMini();
+   },300);
+  }
+ }
+
+ /* 보물찾기 */
+ else if(t==="treasure"){
+  m.round--;
+
+  if(i===m.target){
+   m.score+=25;
+   m.target=rnd(16);
+  }else{
+   m.lives--;
+  }
+
+  if(m.round<=0||m.lives<=0){
+   m.done=true;
+   m.success=m.score>=75;
+  }
+ }
+
+ /* 순발력 */
+ else if(t==="reaction"||t==="quick"){
+  if(!m.ready)return;
+
+  m.ready=false;
+  m.round--;
+  m.score+=15;
+
+  if(m.round<=0){
+   m.done=true;
+   m.success=true;
+  }else{
+   setTimeout(()=>{
+    if(mini&&!mini.done){
+     mini.ready=true;
+     renderMini();
+    }
+   },700+rnd(1300));
+  }
+ }
+
+ /* 숫자 찾기 */
+ else if(t==="number"){
+  if(i===m.target){
+   m.score+=12;
+   m.round--;
+   m.target=1+rnd(50);
+  }else m.lives--;
+
+  if(m.round<=0||m.lives<=0){
+   m.done=true;
+   m.success=m.round<=0;
+  }
+ }
+
+ /* 순서 기억 */
+ else if(t==="sequence"){
+  if(m.showing)return;
+
+  m.seqInput.push(i);
+
+  const pos=m.seqInput.length-1;
+
+  if(i!==m.sequence[pos]){
+   m.done=true;
+   m.success=false;
+  }
+  else if(m.seqInput.length===m.sequence.length){
+   m.score+=20;
+   m.round--;
+
+   if(m.round<=0){
+    m.done=true;
+    m.success=true;
+   }else{
+    makeSequence();
+   }
+  }
+ }
+
+ /* 암산 */
+ else if(t==="math"||t==="fastmath"){
+  if(Number(m.input)===m.answer){
+   m.score+=15;
+   m.round--;
+
+   if(m.round<=0){
+    m.done=true;
+    m.success=true;
+   }else{
+    makeMath(t);
+   }
+  }else{
+   m.lives--;
+   m.input="";
+   if(m.lives<=0)m.done=true;
+  }
+ }
+
+ /* 다른 칸 / 안전 칸 */
+ else if(t==="odd"||t==="safe"){
+  if(i===m.target){
+   m.score+=12;
+   m.round--;
+   m.target=t==="safe"?rnd(9):rnd(16);
+  }else m.lives--;
+
+  if(m.round<=0||m.lives<=0){
+   m.done=true;
+   m.success=m.round<=0;
+  }
+ }
+
+ /* 숫자 순서 */
+ else if(t==="sort"){
+  if(i+1===m.next){
+   m.score+=8;
+   m.next++;
+
+   if(m.next>6){
+    m.round--;
+    m.next=1;
+    m.numbers=shuffle([1,2,3,4,5,6]);
+   }
+  }else m.lives--;
+
+  if(m.round<=0||m.lives<=0){
+   m.done=true;
+   m.success=m.round<=0;
+  }
+ }
+
+ /* 색깔 */
+ else if(t==="color"){
+  if(i===m.target){
+   m.score+=10;
+   m.round--;
+   m.target=rnd(6);
+  }else m.lives--;
+
+  if(m.round<=0||m.lives<=0){
+   m.done=true;
+   m.success=m.round<=0;
+  }
+ }
+
+ /* 지뢰 */
+ else if(t==="mine"){
+  if(m.mines.includes(i)){
+   m.done=true;
+   m.success=false;
+  }else{
+   m.score+=5;
+   if(m.score>=60){
+    m.done=true;
+    m.success=true;
+   }
+  }
+ }
+
+ /* 단어 */
+ else if(t==="word"){
+  if(m.input===m.word){
+   m.score+=20;
+   m.round--;
+
+   if(m.round<=0){
+    m.done=true;
+    m.success=true;
+   }else makeWord();
+  }else{
+   m.lives--;
+   m.input="";
+   if(m.lives<=0)m.done=true;
+  }
+ }
+
+ /* 비밀번호 */
+ else if(t==="lock"){
+  m.input=(m.input||"")+i;
+
+  if(m.input.length===3){
+   if(m.input===m.code){
+    m.score=100;
+    m.done=true;
+    m.success=true;
+   }else{
+    m.lives--;
+    m.input="";
+    if(m.lives<=0)m.done=true;
+   }
+  }
+ }
+
+ /* 탭 / 콤보 */
+ else if(t==="tap"||t==="combo"){
+  if(i===m.target){
+   m.chain++;
+   m.score+=5+m.chain;
+   m.round--;
+   m.target=rnd(9);
+  }else{
+   m.chain=0;
+   m.lives--;
+  }
+
+  if(m.round<=0||m.lives<=0){
+   m.done=true;
+   m.success=m.round<=0;
+  }
+ }
+
+ /* 황금 상자 */
+ else if(t==="chest"){
+  m.round--;
+
+  if(i===m.target)m.score+=40;
+  else m.score+=3;
+
+  m.target=rnd(9);
+
+  if(m.round<=0){
+   m.done=true;
+   m.success=m.score>=30;
+  }
+ }
+
+ /* 행운 보너스 */
+ else if(t==="luck"){
+  m.score=10+m.target*12;
+  m.done=true;
+  m.success=true;
+ }
+
+ /* 별 수집 */
+ else if(t==="stars"){
+  if(m.found.includes(i))return;
+
+  m.found.push(i);
+  m.score+=10;
+  m.round--;
+  m.target=rnd(12);
+
+  if(m.round<=0){
+   m.done=true;
+   m.success=true;
+  }
+ }
+
+ /* 유성 회피 */
+ else if(t==="meteor"){
+  if(i===m.target){
+   m.lives--;
+  }else{
+   m.score+=7;
+   m.round--;
+   m.target=rnd(16);
+  }
+
+  if(m.round<=0||m.lives<=0){
+   m.done=true;
+   m.success=m.round<=0;
+  }
+ }
+
+ /* 숫자 추리 */
+ else if(t==="guess"){
+  const n=Number(m.input);
+
+  if(n===m.target){
+   m.score=50;
+   m.done=true;
+   m.success=true;
+  }else{
+   m.lives--;
+   m.round--;
+   m.hint=n<m.target?"더 큰 숫자":"더 작은 숫자";
+   m.input="";
+
+   if(m.round<=0||m.lives<=0)m.done=true;
+  }
+ }
+
+ /* 라이트 러시 */
+ else if(t==="lights"){
+  if(i===m.target){
+   m.score+=10;
+   m.round--;
+   m.target=rnd(16);
+  }else m.lives--;
+
+  if(m.round<=0||m.lives<=0){
+   m.done=true;
+   m.success=m.round<=0;
+  }
+ }
+
+ /* 코인 - 베팅 없음 */
+ else if(t==="coin"){
+  if(i===m.target)m.score+=15;
+  else m.lives--;
+
+  m.round--;
+  m.target=rnd(2);
+
+  if(m.round<=0||m.lives<=0){
+   m.done=true;
+   m.success=m.score>=45;
+  }
+ }
+
+ /* 주사위 */
+ else if(t==="dice"){
+  if(i===m.target){
+   m.score+=20;
+   m.round--;
+  }else{
+   m.lives--;
+  }
+
+  m.target=1+rnd(6);
+
+  if(m.round<=0||m.lives<=0){
+   m.done=true;
+   m.success=m.round<=0;
+  }
+ }
+
+ /* 보물 문 */
+ else if(t==="doors"){
+  if(i===m.target){
+   m.score+=25;
+   m.round--;
+   m.target=rnd(6);
+  }else m.lives--;
+
+  if(m.round<=0||m.lives<=0){
+   m.done=true;
+   m.success=m.round<=0;
+  }
+ }
+
+ /* 타이밍 */
+ else if(t==="timing"){
+  if(i===m.target){
+   m.score+=20;
+   m.round--;
+   m.target=rnd(10);
+  }else m.lives--;
+
+  if(m.round<=0||m.lives<=0){
+   m.done=true;
+   m.success=m.round<=0;
+  }
+ }
+
+ /* 퍼펙트 타깃 */
+ else if(t==="target"){
+  if(i===m.target){
+   m.score+=15;
+   m.round--;
+   m.target=rnd(16);
+  }else m.lives--;
+
+  if(m.round<=0||m.lives<=0){
+   m.done=true;
+   m.success=m.round<=0;
+  }
+ }
+
+ /* 숫자 레이스 */
+ else if(t==="race"){
+  if(i+1===m.target){
+   m.progress++;
+   m.score+=10;
+   m.target=1+rnd(9);
+   m.round--;
+
+   if(m.progress>=5){
+    m.done=true;
+    m.success=true;
+   }
+  }else{
+   m.lives--;
+  }
+
+  if(m.round<=0||m.lives<=0)m.done=true;
+ }
+
+ /* 안전선 */
+ else if(t==="wire"){
+  if(i===m.target){
+   m.lives--;
+   m.target=rnd(6);
+  }else{
+   m.score+=20;
+   m.round--;
+   m.target=rnd(6);
+  }
+
+  if(m.round<=0||m.lives<=0){
+   m.done=true;
+   m.success=m.round<=0;
+  }
+ }
+
+ /* 패턴 */
+ else if(t==="pattern"){
+  if(m.showing)return;
+
+  m.patternInput.push(i);
+
+  const pos=m.patternInput.length-1;
+
+  if(i!==m.pattern[pos]){
+   m.done=true;
+   m.success=false;
+  }else if(m.patternInput.length===m.pattern.length){
+   m.score+=25;
+   m.round--;
+
+   if(m.round<=0){
+    m.done=true;
+    m.success=true;
+   }else{
+    m.pattern=[0,1,2,3].slice(0,3+rnd(2)).map(()=>rnd(4));
+    m.patternInput=[];
+    m.showing=true;
+
+    setTimeout(()=>{
+     if(mini){
+      mini.showing=false;
+      renderMini();
+     }
+    },900);
+   }
+  }
+ }
+
+ /* 미니 미로 */
+ else if(t==="maze"){
+  if(i===m.target){
+   m.score+=12;
+   m.round--;
+   m.target=rnd(9);
+  }else{
+   m.lives--;
+  }
+
+  if(m.round<=0||m.lives<=0){
+   m.done=true;
+   m.success=m.round<=0;
+  }
+ }
+
+ /* 별 잡기 */
+ else if(t==="catch"){
+  if(i===m.target){
+   if(!m.found.includes(i)){
+    m.found.push(i);
+    m.score+=10;
+   }
+   m.round--;
+   m.target=rnd(12);
+  }else{
+   m.lives--;
+  }
+
+  if(m.round<=0||m.lives<=0){
+   m.done=true;
+   m.success=m.round<=0;
+  }
+ }
+
+ /* 색 순서 */
+ else if(t==="colororder"){
+  if(m.showing)return;
+
+  m.colorInput.push(i);
+
+  const pos=m.colorInput.length-1;
+
+  if(i!==m.colors[pos]){
+   m.lives--;
+   m.colorInput=[];
+
+   if(m.lives<=0)m.done=true;
+  }
+  else if(m.colorInput.length===4){
+   m.score+=25;
+   m.round--;
+
+   if(m.round<=0){
+    m.done=true;
+    m.success=true;
+   }else{
+    makeColorOrder();
+   }
+  }
+ }
+
+ saveGame();
+ renderMini();
+}
+
+function setMiniInput(v){
+ if(mini)mini.input=v;
+ renderMini();
+}
+
+function finishMini(){
+ if(!mini)return;
+
+ const reward=Math.max(10,Math.floor(mini.score/2)+10);
+
+ earnGold(reward);
+
+ if(mini.success)
+  save.stats.miniWins++;
+
+ mini=null;
+ saveGame();
+ show("mini");
+
+ toast("미니게임 보상!\n+"+reward+"G");
+}
+
+function miniButtons(n,type,labelFn){
+ let html="";
+
+ for(let i=0;i<n;i++){
+  html+=`<button onclick="miniAction(${i})">${labelFn(i)}</button>`;
+ }
+
+ return html;
+}
+
+function renderMini(){
+ if(!mini){
+  $("v_mini").innerHTML=`
+   <div class="panel">
+    <h2>미니게임 광장</h2>
+    <p class="small">
+     총 ${miniGames.length}종류의 미니게임.
+     실패해도 다시 도전할 수 있습니다.
+    </p>
+
+    <div class="grid">
+     ${miniGames.map(g=>`
+      <div class="card">
+       <h3>${g[1]}</h3>
+       <p class="small">점수에 따라 골드 보상</p>
+       <button onclick="startMini('${g[0]}')">도전</button>
+      </div>
+     `).join("")}
+    </div>
+   </div>
+
+   <div class="panel">
+    <b>플레이</b> ${save.stats.miniPlays}회　
+    <b>성공</b> ${save.stats.miniWins}회
+   </div>
+  `;
+  return;
+ }
+
+ const m=mini;
+ const title=miniGames.find(x=>x[0]===m.type)[1];
+
+ if(m.done){
+  $("v_mini").innerHTML=`
+   <div class="panel center">
+    <h2>${title} 종료</h2>
+    <div class="big">${m.score}점</div>
+
+    <p class="small">
+     ${m.success?"성공! 보상이 증가합니다.":"아쉽습니다. 다시 도전할 수 있습니다."}
+    </p>
+
+    <button class="primary" onclick="finishMini()">보상 받기</button>
+    <button onclick="mini=null;show('mini')">목록</button>
+   </div>
+  `;
+  return;
+ }
+
+ const status=`
+  <p class="small">
+   점수 ${m.score}　
+   ${m.lives!==undefined?"기회 "+m.lives+"　":""}
+   ${m.round!==undefined?"남은 라운드 "+m.round:""}
+  </p>`;
+
+ let body="";
+
+ if(m.type==="shoot"){
+  body=`
+   <div class="miniGrid">
+    ${miniButtons(12,"",i=>i===m.target?"TARGET":"O")}
+   </div>`;
+ }
+
+ else if(m.type==="memory"){
+  body=`
+   <div class="miniGrid">
+    ${m.cards.map((x,i)=>`
+     <button onclick="miniAction(${i})">
+      ${m.open.includes(i)?x+1:"?"}
+     </button>
+    `).join("")}
+   </div>`;
+ }
+
+ else if(m.type==="treasure"){
+  body=`<div class="miniGrid">${miniButtons(16,"",i=>i===m.target?"TREASURE":"?")}</div>`;
+ }
+
+ else if(m.type==="reaction"||m.type==="quick"){
+  body=`
+   <button class="target ${m.ready?"good":""}"
+    onclick="miniAction(0)">
+    ${m.ready?"GO!":"기다리세요..."}
+   </button>`;
+ }
+
+ else if(m.type==="number"){
+  body=`
+   <h3 class="center">목표 숫자: ${m.target}</h3>
+   <div class="miniGrid">
+    ${miniButtons(50,"",i=>i+1)}
+   </div>`;
+ }
+
+ else if(m.type==="sequence"){
+  body=`
+   <div class="panel center">
+    <div class="big">
+     ${m.showing?m.sequence.join(" - "):(m.seqInput.join(" - ")||"?")}
+    </div>
+   </div>
+   ${m.showing?"":`
+    <div class="miniGrid">
+     ${miniButtons(9,"",i=>i+1)}
+    </div>`}`;
+ }
+
+ else if(m.type==="math"||m.type==="fastmath"){
+  body=`
+   <div class="center">
+    <div class="big">
+     ${m.a} ${m.type==="fastmath"?"×":"+"} ${m.b} = ?
+    </div>
+    <input inputmode="numeric"
+      value="${m.input}"
+      oninput="setMiniInput(this.value)">
+    <br><br>
+    <button class="primary" onclick="miniAction(0)">정답 제출</button>
+   </div>`;
+ }
+
+ else if(m.type==="odd"){
+  body=`<div class="miniGrid">${miniButtons(16,"",i=>i===m.target?"◆":"◇")}</div>`;
+ }
+
+ else if(m.type==="safe"){
+  body=`<div class="miniGrid">${miniButtons(9,"",i=>i===m.target?"SAFE":"X")}</div>`;
+ }
+
+ else if(m.type==="sort"){
+  body=`
+   <div class="miniGrid">
+    ${m.numbers.map((x,i)=>`
+     <button onclick="miniAction(${i})">${x}</button>
+    `).join("")}
+   </div>
+   <p class="small center">1부터 6까지 순서대로 누르세요.</p>`;
+ }
+
+ else if(m.type==="color"){
+  body=`<div class="miniGrid">${miniButtons(6,"",i=>i===m.target?"COLOR":"COLOR")}</div>`;
+ }
+
+ else if(m.type==="mine"){
+  body=`
+   <div class="miniGrid">
+    ${miniButtons(25,"",i=>"?")}
+   </div>`;
+ }
+
+ else if(m.type==="word"){
+  body=`
+   <div class="center">
+    <div class="big">${m.scrambled}</div>
+    <input value="${m.input}" oninput="setMiniInput(this.value)">
+    <br><br>
+    <button onclick="miniAction(0)">제출</button>
+   </div>`;
+ }
+
+ else if(m.type==="lock"){
+  body=`
+   <div class="center">
+    <div class="big">${m.input||"???"}</div>
+    <div class="miniGrid">
+     ${miniButtons(9,"",i=>i+1)}
+    </div>
+   </div>`;
+ }
+
+ else if(m.type==="tap"||m.type==="combo"){
+  body=`
+   <div class="miniGrid">
+    ${miniButtons(9,"",i=>i===m.target?"TARGET":"+")}
+   </div>`;
+ }
+
+ else if(m.type==="chest"){
+  body=`
+   <div class="miniGrid">
+    ${miniButtons(9,"",i=>i===m.target?"GOLD":"CHEST")}
+   </div>`;
+ }
+
+ else if(m.type==="luck"){
+  body=`
+   <div class="center">
+    <div class="big">x${m.target}</div>
+    <p>무료 행운 보너스를 확인하세요.</p>
+    <button class="primary" onclick="miniAction(0)">보너스 받기</button>
+   </div>`;
+ }
+
+ else if(m.type==="stars"){
+  body=`<div class="miniGrid">${miniButtons(12,"",i=>m.found.includes(i)?"★":(i===m.target?"★":"·"))}</div>`;
+ }
+
+ else if(m.type==="meteor"){
+  body=`<div class="miniGrid">${miniButtons(16,"",i=>i===m.target?"METEOR":"SAFE")}</div>`;
+ }
+
+ else if(m.type==="guess"){
+  body=`
+   <div class="center">
+    <div class="big">${m.hint||"1~40"}</div>
+    <input inputmode="numeric"
+      value="${m.input}"
+      oninput="setMiniInput(this.value)">
+    <br><br>
+    <button onclick="miniAction(0)">추리</button>
+   </div>`;
+ }
+
+ else if(m.type==="lights"){
+  body=`<div class="miniGrid">${miniButtons(16,"",i=>i===m.target?"ON":"OFF")}</div>`;
+ }
+
+ else if(m.type==="coin"){
+  body=`
+   <div class="miniGrid">
+    <button onclick="miniAction(0)">HEAD</button>
+    <button onclick="miniAction(1)">TAIL</button>
+   </div>`;
+ }
+
+ else if(m.type==="dice"){
+  body=`
+   <div class="miniGrid">
+    ${miniButtons(6,"",i=>i+1)}
+   </div>
+   <p class="small center">목표 주사위: ${m.target}</p>`;
+ }
+
+ else if(m.type==="doors"){
+  body=`<div class="miniGrid">${miniButtons(6,"",i=>i===m.target?"TREASURE":"DOOR")}</div>`;
+ }
+
+ else if(m.type==="timing"){
+  body=`<div class="miniGrid">${miniButtons(10,"",i=>i===m.target?"HIT":"WAIT")}</div>`;
+ }
+
+ else if(m.type==="target"){
+  body=`<div class="miniGrid">${miniButtons(16,"",i=>i===m.target?"TARGET":"O")}</div>`;
+ }
+
+ else if(m.type==="race"){
+  body=`
+   <div class="miniGrid">
+    ${miniButtons(9,"",i=>i+1)}
+   </div>
+   <p class="small center">진행도 ${m.progress}/5</p>`;
+ }
+
+ else if(m.type==="wire"){
+  body=`
+   <div class="miniGrid">
+    ${miniButtons(6,"",i=>i===m.target?"DANGER":"SAFE")}
+   </div>`;
+ }
+
+ else if(m.type==="pattern"){
+  body=`
+   <div class="panel center">
+    <div class="big">
+     ${m.showing?m.pattern.join(" "):(m.patternInput.join(" ")||"?")}
+    </div>
+   </div>
+   ${m.showing?"":`
+   <div class="miniGrid">
+    ${miniButtons(4,"",i=>"COLOR "+(i+1))}
+   </div>`}`;
+ }
+
+ else if(m.type==="maze"){
+  body=`
+   <div class="miniGrid">
+    ${miniButtons(9,"",i=>i===m.target?"EXIT":"PATH")}
+   </div>`;
+ }
+
+ else if(m.type==="catch"){
+  body=`
+   <div class="miniGrid">
+    ${miniButtons(12,"",i=>i===m.target?"STAR":"")}
+   </div>`;
+ }
+
+ else if(m.type==="colororder"){
+  body=`
+   <div class="panel center">
+    <div class="big">
+     ${m.showing?m.colors.join(" "):(m.colorInput.join(" ")||"?")}
+    </div>
+   </div>
+   ${m.showing?"":`
+   <div class="miniGrid">
+    ${miniButtons(5,"",i=>"COLOR "+(i+1))}
+   </div>`}`;
+ }
+
+ $("v_mini").innerHTML=`
+  <div class="panel">
+   <h2>${title}</h2>
+   ${status}
+   ${body}
+  </div>
+
+  <div class="panel center">
+   <button onclick="mini=null;show('mini')">미니게임 목록</button>
+  </div>
+ `;
+}
+
+/* =========================
+   상점
+========================= */
+
+function buyItem(id){
+ const item=shopItems[id];
+
+ if(save.gold<item[1]){
+  toast("골드가 부족합니다.");
+  return;
+ }
+
+ save.gold-=item[1];
+ save.items[id]=(save.items[id]||0)+1;
+
+ saveGame();
+ show("shop");
+}
+
+function renderShop(){
+ $("v_shop").innerHTML=`
+ <div class="panel">
+  <h2>상점</h2>
+  <div class="grid">
+   ${Object.entries(shopItems).map(([id,x])=>`
+    <div class="card">
+     <h3>${x[0]}</h3>
+     <p>${x[1]}G</p>
+     <button onclick="buyItem('${id}')">구매</button>
+    </div>
+   `).join("")}
+  </div>
+ </div>
+ `;
+}
+
+/* =========================
+   가방
+========================= */
+
+function renderBag(){
+ $("v_bag").innerHTML=`
+ <div class="panel">
+  <h2>가방</h2>
+
+  <div class="grid">
+   ${Object.entries(save.items).map(([id,n])=>`
+    <div class="card">
+     <b>${id}</b>
+     <div class="big">${n}</div>
+    </div>
+   `).join("")}
+  </div>
+
+  <br>
+
+  <div class="panel">
+   <b>현재 무기</b>
+   <p>${save.weapon}</p>
+  </div>
+ </div>
+ `;
+}
+
+/* =========================
+   제작
+========================= */
+
+function craftPotion(){
+ if(save.items.herb<2){
+  toast("약초가 2개 필요합니다.");
+  return;
+ }
+
+ save.items.herb-=2;
+ save.items.potion++;
+
+ saveGame();
+ show("craft");
+}
+
+function craftBomb(){
+ if(save.items.iron<2){
+  toast("철광석 2개가 필요합니다.");
+  return;
+ }
+
+ save.items.iron-=2;
+ save.items.bomb++;
+
+ saveGame();
+ show("craft");
+}
+
+function craftCrystal(){
+ if(save.items.crystal<2||save.items.iron<1){
+  toast("수정 2개 + 철광석 1개가 필요합니다.");
+  return;
+ }
+
+ save.items.crystal-=2;
+ save.items.iron--;
+ save.items.gem++;
+
+ saveGame();
+ show("craft");
+}
+
+function renderCraft(){
+ $("v_craft").innerHTML=`
+ <div class="panel">
+  <h2>제작소</h2>
+
+  <div class="grid">
+   <div class="card">
+    <h3>물약</h3>
+    <p class="small">약초 2개</p>
+    <button onclick="craftPotion()">제작</button>
+   </div>
+
+   <div class="card">
+    <h3>폭탄</h3>
+    <p class="small">철광석 2개</p>
+    <button onclick="craftBomb()">제작</button>
+   </div>
+
+   <div class="card">
+    <h3>보석</h3>
+    <p class="small">수정 2개 + 철광석 1개</p>
+    <button onclick="craftCrystal()">제작</button>
+   </div>
+  </div>
+ </div>
+ `;
+}
+
+/* =========================
+   도감
+========================= */
+
+function renderBook(){
+ $("v_book").innerHTML=`
+ <div class="panel">
+  <h2>몬스터 도감</h2>
+  <p>발견 ${save.monsters.length}/10</p>
+
+  <div>
+   ${Object.keys(monsters).map(n=>`
+    <span class="badge">
+     ${save.monsters.includes(n)?n:"???"}
+    </span>
+   `).join("")}
+  </div>
+ </div>
+ `;
+}
+
+/* =========================
+   200 업적
+========================= */
+
+const achievements=[];
+
+function achievement(name,fn){
+ achievements.push({name,fn});
+}
+
+achievement("첫 클릭",s=>s.clicks>=1);
+achievement("클릭 100회",s=>s.clicks>=100);
+achievement("클릭 500회",s=>s.clicks>=500);
+achievement("클릭 1000회",s=>s.clicks>=1000);
+achievement("첫 탐험",s=>s.explores>=1);
+achievement("탐험가",s=>s.explores>=10);
+achievement("숙련 탐험가",s=>s.explores>=50);
+achievement("첫 승리",s=>s.wins>=1);
+achievement("전투 초보",s=>s.wins>=10);
+achievement("전투 숙련자",s=>s.wins>=50);
+achievement("첫 미니게임",s=>s.miniPlays>=1);
+achievement("미니게임 10회",s=>s.miniPlays>=10);
+achievement("미니게임 50회",s=>s.miniPlays>=50);
+achievement("미니게임 성공 10회",s=>s.miniWins>=10);
+achievement("미니게임 성공 50회",s=>s.miniWins>=50);
+
+for(let i=16;i<199;i++){
+ const n=i-15;
+
+ achievement(
+  "도전 업적 "+n,
+  s=>(
+   s.clicks>=n*100 ||
+   s.explores>=n*3 ||
+   s.wins>=n*2 ||
+   s.miniWins>=n
+  )
+ );
+}
+
+achievement("업적의 신",()=>Object.keys(save.achievements).length>=199);
+
+function checkAchievements(){
+ achievements.forEach((a,i)=>{
+  if(save.achievements[i])return;
+
+  let ok=false;
+
+  try{
+   ok=a.fn(save.stats);
+  }catch(e){}
+
+  if(ok){
+   save.achievements[i]=true;
+  }
+ });
+
+ saveGame();
+}
+
+function renderAchievements(){
+ checkAchievements();
+
+ $("v_ach").innerHTML=`
+ <div class="panel">
+  <h2>업적</h2>
+  <div class="big">
+   ${Object.keys(save.achievements).length}/200
+  </div>
+ </div>
+
+ <div class="grid">
+  ${achievements.map((a,i)=>{
+   const done=!!save.achievements[i];
+
+   return `
+    <div class="card achievement ${done?"done":""}">
+     <b>${done?"달성":"잠김"}</b>
+     <p>${done?a.name:"???"}</p>
+     <span class="small">
+      ${done?"완료":"조건을 달성하면 공개"}
+     </span>
+    </div>
+   `;
+  }).join("")}
+ </div>
+ `;
+}
+
+/* =========================
+   전체 렌더링
+========================= */
+
+function renderAll(){
+ header();
+ renderHome();
+ renderAdventure();
+ renderBattle();
+ renderClick();
+ renderMini();
+ renderShop();
+ renderBag();
+ renderCraft();
+ renderBook();
+ renderAchievements();
+}
+
+/* =========================
+   시작
+========================= */
+
+makeViews();
+
+renderAll();
+
+show("home");
+
+setInterval(()=>{
+ checkAchievements();
+ header();
+},3000);
+
+document.addEventListener("visibilitychange",()=>{
+ if(document.hidden)saveGame();
+});
+</script>
+</body>
+</html>
+```
