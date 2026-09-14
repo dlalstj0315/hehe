@@ -213,10 +213,38 @@ h1,h2,h3{margin-top:0}
  .memoryGrid{grid-template-columns:repeat(4,1fr)}
  .memoryCard{min-height:60px;padding:5px}
 }
+
+#adOverlay{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;background:rgba(5,8,18,.78);backdrop-filter:blur(6px);padding:18px}
+#adOverlay.show{display:flex}
+#adBox{width:min(680px,94vw);border:1px solid #64748b;border-radius:24px;background:linear-gradient(145deg,#111827,#0b1220);box-shadow:0 24px 80px rgba(0,0,0,.55);overflow:hidden;cursor:pointer}
+#adTop{padding:14px 18px;background:rgba(255,255,255,.05);display:flex;justify-content:space-between;align-items:center;gap:10px}
+#adBadge{font-size:12px;font-weight:800;letter-spacing:.08em;color:#fbbf24}
+#adBody{padding:28px;text-align:center}
+#adChannel{font-size:clamp(24px,5vw,42px);font-weight:900;margin:8px 0 10px}
+#adTimer{font-size:18px;font-weight:800;margin:14px 0;color:#93c5fd}
+#adHint{font-size:13px;color:#94a3b8;line-height:1.6}
+#adSkip{margin-top:18px;display:none;width:100%;padding:12px;border:0;border-radius:12px;background:#334155;color:#fff;font-weight:800;cursor:pointer}
+#adSkip.ready{display:block}
+#adProgress{height:5px;background:#1e293b}
+#adProgressBar{height:100%;width:0;background:#60a5fa;transition:width .2s linear}
+
 </style>
 </head>
 
 <body>
+<div id="adOverlay" aria-live="polite">
+ <div id="adBox" onclick="openCurrentAd()">
+  <div id="adTop"><span id="adBadge">외부 채널 안내</span><span id="adCountLabel">AD</span></div>
+  <div id="adProgress"><div id="adProgressBar"></div></div>
+  <div id="adBody">
+   <div class="muted">추천 채널</div>
+   <div id="adChannel">채널</div>
+   <div id="adTimer">15초 후 스킵할 수 있습니다.</div>
+   <div id="adHint">화면을 누르면 해당 채널로 이동합니다. 15초가 지나면 스킵할 수 있습니다.</div>
+   <button id="adSkip" onclick="event.stopPropagation();skipAd()">광고 스킵</button>
+  </div>
+ </div>
+</div>
 <div id="app">
 
 <header>
@@ -480,7 +508,9 @@ h1,h2,h3{margin-top:0}
    </div>
   </div>
 
-  <div class="card" style="margin-bottom:12px;border:1px solid #8b5cf6"><span class="tag">외부 미니게임</span><h3>공포 아닌 공포</h3><p class="muted">이상하게 긴장되지만 무섭지는 않은 외부 미니게임!</p><button onclick="location.href='https://dlalstj0315.github.io/eeee/'">게임 시작</button></div><div class="card" style="margin-bottom:12px;border:1px solid #ef4444"><span class="tag">외부 게임</span><h3>공포라고 한다</h3><p class="muted">새로운 외부 미니게임입니다.</p><button onclick="location.href='https://dlalstj0315.github.io/sibal/'">게임 시작</button></div><div class="card" style="margin-bottom:12px;border:1px solid #22c55e"><span class="tag">외부 게임</span><h3>선택게임 2</h3><p class="muted">두 번째 선택형 외부 미니게임입니다.</p><button onclick="location.href='https://dlalstj0315.github.io/habe/'">게임 시작</button></div><div id="miniArea"></div>
+  <div class="card" style="margin-bottom:12px;border:1px solid #8b5cf6"><span class="tag">외부 미니게임</span><h3>공포 아닌 공포</h3><p class="muted">이상하게 긴장되지만 무섭지는 않은 외부 미니게임!</p><button onclick="location.href='https://dlalstj0315.github.io/eeee/'">게임 시작</button></div>
+  <div class="card" style="margin-bottom:12px;border:1px solid #ef4444"><span class="tag">외부 게임</span><h3>공포라고 한다</h3><p class="muted">새로운 외부 미니게임입니다.</p><button onclick="location.href='https://dlalstj0315.github.io/sibal/'">게임 시작</button></div>
+  <div class="card" style="margin-bottom:12px;border:1px solid #22c55e"><span class="tag">외부 게임</span><h3>선택게임 2</h3><p class="muted">두 번째 선택형 외부 미니게임입니다.</p><button onclick="location.href='https://dlalstj0315.github.io/habe/'">게임 시작</button></div><div class="card" style="margin-bottom:12px;border:1px solid #38bdf8"><span class="tag">자회가 만든 게임</span><h3>자회가 만든 겜</h3><p class="muted">자회가 만든 게임을 플레이해보세요.</p><button onclick="location.href='https://jahoe.win/'">게임 시작</button></div><div id="miniArea"></div>
  </div>
 </section>
 
@@ -547,6 +577,10 @@ let data=JSON.parse(localStorage.getItem(SAVE)||"null")||{
 };
 
 if(typeof data.challengeTickets!=="number")data.challengeTickets=3;
+if(typeof data.adViews!=="number")data.adViews=0;
+if(typeof data.adClicks!=="number")data.adClicks=0;
+if(typeof data.adLastChannel!=="string")data.adLastChannel="";
+if(!data.adSeenChannels||typeof data.adSeenChannels!=="object")data.adSeenChannels={};
 if(typeof data.challengeWins!=="number")data.challengeWins=0;
 if(typeof data.challengeBest!=="number")data.challengeBest=0;
 if(typeof data.adminAbuseClaimedWeek!=="string")data.adminAbuseClaimedWeek="";
@@ -1671,6 +1705,21 @@ const lateAchievements=[
 ];
 for(const a of lateAchievements) achievements.push(a);
 
+const adAchievements=[
+ ["ad1","첫 광고 시청","광고를 15초 시청하세요.",()=>data.adViews>=1],
+ ["ad3","광고 탐방가","광고를 3회 시청하세요.",()=>data.adViews>=3],
+ ["ad5","채널 구경꾼","광고를 5회 시청하세요.",()=>data.adViews>=5],
+ ["ad10","광고 베테랑","광고를 10회 시청하세요.",()=>data.adViews>=10],
+ ["adBoth","두 채널 모두 발견","두 채널의 광고를 각각 한 번 이상 시청하세요.",()=>data.adSeenChannels.first&&data.adSeenChannels.second]
+];
+for(const a of adAchievements) achievements.push(a);
+
+function checkAdAchievements(){
+ for(const a of adAchievements){
+  if(!data.achievements[a[0]] && a[3]()) unlock(a[0]);
+ }
+}
+
 function checkLateAchievements(){
  for(const a of lateAchievements){
   if(!data.achievements[a[0]] && a[3]()) unlock(a[0]);
@@ -1741,9 +1790,74 @@ function updateAdminAbuse(){
     el.style.color=active?"#ff4f8b":"";
   }
 }
+let adTimerId=null;
+let adStartTime=0;
+let adChannelIndex=0;
+const adChannels=[
+ {name:"쁘띠땡땡",url:"https://www.youtube.com/@%EC%81%98%EB%9D%A0%EB%95%A1%EB%95%A1"},
+ {name:"자회자회",url:"https://www.youtube.com/@%EC%9E%90%ED%9A%8C%EC%9E%90%ED%9A%8C"}
+];
+function scheduleNextAd(){
+ clearTimeout(adTimerId);
+ const delay=60000+Math.floor(Math.random()*120001);
+ adTimerId=setTimeout(showAd,delay);
+}
+function showAd(){
+ const overlay=$("adOverlay");
+ if(!overlay)return;
+ adChannelIndex=Math.random()<0.6?0:1;
+ const ch=adChannels[adChannelIndex];
+ $("adChannel").textContent=ch.name;
+ $("adCountLabel").textContent="AD • "+(adChannelIndex===0?"60%":"40%");
+ $("adTimer").textContent="15초 후 스킵할 수 있습니다.";
+ $("adSkip").classList.remove("ready");
+ $("adProgressBar").style.width="0%";
+ overlay.classList.add("show");
+ adStartTime=Date.now();
+ clearInterval(adTimerId);
+ let left=15;
+ adTimerId=setInterval(()=>{
+  left--;
+  $("adTimer").textContent=left>0?`${left}초 후 스킵할 수 있습니다.`:"지금 스킵할 수 있습니다.";
+  $("adProgressBar").style.width=Math.min(100,(15-left)/15*100)+"%";
+  if(left<=0){
+   clearInterval(adTimerId);
+   $("adSkip").classList.add("ready");
+   $("adTimer").textContent="시청 완료! 이제 스킵할 수 있습니다.";
+  }
+ },1000);
+}
+function openCurrentAd(){
+ const elapsed=(Date.now()-adStartTime)/1000;
+ const ch=adChannels[adChannelIndex];
+ data.adClicks++;
+ save();
+ window.open(ch.url,"_blank","noopener");
+ if(elapsed>=15)finishAdView();
+}
+function finishAdView(){
+ if(!$('adOverlay').classList.contains('show'))return;
+ const key=adChannelIndex===0?"first":"second";
+ data.adViews++;
+ data.adLastChannel=key;
+ data.adSeenChannels=data.adSeenChannels||{};
+ data.adSeenChannels[key]=true;
+ checkAdAchievements();
+ save();
+ renderAll();
+ $("adOverlay").classList.remove("show");
+ clearInterval(adTimerId);
+ scheduleNextAd();
+}
+function skipAd(){
+ if((Date.now()-adStartTime)<15000)return;
+ finishAdView();
+}
+
 function renderAll(){
   updateAdminAbuse();
  checkLateAchievements();
+ checkAdAchievements();
  renderHeader();
  renderLogs();
  renderRegions();
@@ -1766,6 +1880,7 @@ window.addEventListener("beforeunload",()=>{
 renderAll();
 show("home");
 if(!data.tutorialDone) setTimeout(startTutorial,300);
+scheduleNextAd();
 </script>
 
 </body>
