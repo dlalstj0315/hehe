@@ -609,6 +609,7 @@ const monsters={
 };
 
 let enemy=null;
+let battleHealUsed=false;
 let currentView="home";
 let mini=null;
 let miniTimer=null;
@@ -814,6 +815,7 @@ function randomBattle(){
   atk:monsters[name].atk,
   reward:monsters[name].reward
  };
+ battleHealUsed=false;
 
  log(name+"이(가) 나타났습니다!");
  renderAll();
@@ -836,6 +838,7 @@ function attack(){
   if(data.kills>=10)unlock("killer10");
   if(data.kills>=50)unlock("killer50");
   enemy=null;
+  battleHealUsed=false;
   save();
   renderAll();
   return;
@@ -847,6 +850,7 @@ function attack(){
   data.hp=data.maxHp;
   data.gold=Math.max(0,data.gold-10);
   enemy=null;
+  battleHealUsed=false;
   log("전투에서 쓰러졌습니다. 회복 후 마을로 돌아왔습니다.");
  }
 
@@ -857,9 +861,45 @@ function attack(){
 function nameSafe(x){return x}
 
 function heal(){
- const amount=25;
- data.hp=Math.min(data.maxHp,data.hp+amount);
- log("HP를 "+amount+" 회복했습니다.");
+ if(!enemy){
+  toast("전투 중에만 회복할 수 있습니다.");
+  return;
+ }
+ if(data.hp>=data.maxHp){
+  toast("HP가 이미 가득 찼습니다.");
+  return;
+ }
+
+ // 실제 보유한 물약을 사용해서 회복합니다.
+ // 대형 회복 물약이 있으면 75HP, 일반 회복 물약은 25HP를 회복합니다.
+ let potionName="";
+ let amount=0;
+ if((data.items["대형 회복 물약"]||0)>0){
+  potionName="대형 회복 물약";
+  amount=75;
+ }else if((data.items["회복 물약"]||0)>0){
+  potionName="회복 물약";
+  amount=25;
+ }else{
+  toast("사용할 회복 물약이 없습니다.");
+  return;
+ }
+
+ data.items[potionName]--;
+ amount=Math.min(amount,data.maxHp-data.hp);
+ data.hp+=amount;
+ log(potionName+"을 사용해 HP "+amount+" 회복!");
+
+ // 물약 사용은 한 턴을 소비합니다.
+ data.hp-=enemy.atk;
+ log(enemy.name+"의 반격! "+enemy.atk+" 피해");
+ if(data.hp<=0){
+  data.hp=data.maxHp;
+  data.gold=Math.max(0,data.gold-10);
+  enemy=null;
+  log("전투에서 쓰러졌습니다. 회복 후 마을로 돌아왔습니다.");
+ }
+
  save();
  renderAll();
 }
@@ -868,6 +908,7 @@ function flee(){
  if(!enemy)return;
  log(enemy.name+"에게서 도망쳤습니다.");
  enemy=null;
+ battleHealUsed=false;
  save();
  renderAll();
 }
