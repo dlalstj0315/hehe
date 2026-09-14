@@ -228,10 +228,42 @@ h1,h2,h3{margin-top:0}
 #adProgress{height:5px;background:#1e293b}
 #adProgressBar{height:100%;width:0;background:#60a5fa;transition:width .2s linear}
 
+
+/* ===== 무기 교체 + 어드민 어뷰즈 ===== */
+#adminAbuseFx{
+ position:fixed;inset:0;z-index:18;pointer-events:none;display:none;
+ background:linear-gradient(115deg,rgba(255,0,80,.12),rgba(255,220,0,.12),rgba(0,255,180,.12),rgba(0,120,255,.12),rgba(190,0,255,.12));
+ background-size:400% 400%;animation:adminRainbow 3s linear infinite;
+}
+#adminAbuseFx.show{display:block}
+#adminAbuseBanner{
+ position:fixed;top:86px;left:50%;transform:translateX(-50%);
+ z-index:19;pointer-events:none;display:none;
+ padding:5px 14px;border-radius:999px;font-size:12px;font-weight:900;
+ letter-spacing:.08em;background:rgba(10,15,32,.78);border:1px solid rgba(255,255,255,.28);
+ box-shadow:0 0 18px rgba(255,255,255,.12);white-space:nowrap;
+}
+#adminAbuseBanner.show{display:block;animation:adminText 1.2s ease-in-out infinite}
+@keyframes adminRainbow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes adminText{0%,100%{opacity:.65}50%{opacity:1}}
+.weaponSlots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.weaponSlot{min-height:105px;background:#0c1328;border:1px solid #34436b;border-radius:14px;padding:10px}
+.weaponSlot.equipped{border:2px solid #61e7ff;box-shadow:0 0 16px rgba(97,231,255,.16)}
+.weaponSlot.empty{opacity:.55}
+.weaponName{font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.weaponDamage{font-size:13px;color:#ffd75a;margin:5px 0}
+.weaponActions{display:flex;gap:5px;margin-top:8px}
+.weaponActions button{padding:7px 8px;font-size:11px;flex:1}
+.secretBallCard{border:2px solid #ff4fd8!important;background:linear-gradient(145deg,#23132d,#131a35)!important}
+.secretBallGlow{animation:secretGlow 1.4s ease-in-out infinite}
+@keyframes secretGlow{50%{box-shadow:0 0 28px rgba(255,79,216,.25)}}
+@media(max-width:600px){.weaponSlots{grid-template-columns:repeat(2,1fr)}#adminAbuseBanner{top:74px}}
+
 </style>
 </head>
 
 <body>
+<div id="adminAbuseFx"></div><div id="adminAbuseBanner"></div>
 <div id="adOverlay" aria-live="polite">
  <div id="adBox" onclick="openCurrentAd()">
   <div id="adTop"><span id="adBadge">외부 채널 안내</span><span id="adCountLabel">AD</span></div>
@@ -278,7 +310,11 @@ h1,h2,h3{margin-top:0}
 <section id="v_home" class="view active">
  <div class="panel">
   <h1>종합게임에 오신 것을 환영합니다</h1>
-  <p class="muted">모험하고, 전투하고, 미니게임을 플레이하면서 성장하세요.</p>
+  <p class="muted">모험하고, 전투하고, 미니게임을 플레이하면서 성장하세요.</p><div class="card" style="margin-top:12px;border:1px solid #d946ef">
+  <b>어드민 어뷰즈</b>
+  <div class="muted" style="margin-top:4px">수요일·일요일 14:00~14:30 · 골드 2배 · 시크릿 럭블 2개 자동 지급</div>
+  <div style="margin-top:5px">시크릿 럭블 보유: <b id="homeLuckyBalls">0</b>개</div>
+</div>
 
   <div class="grid">
    <div class="card">
@@ -585,6 +621,10 @@ if(typeof data.challengeWins!=="number")data.challengeWins=0;
 if(typeof data.challengeBest!=="number")data.challengeBest=0;
 if(typeof data.adminAbuseClaimedWeek!=="string")data.adminAbuseClaimedWeek="";
 if(typeof data.adminAbuseActive!=="boolean")data.adminAbuseActive=false;
+if(!Array.isArray(data.weaponSlots))data.weaponSlots=[];
+if(typeof data.equippedWeapon!=="number")data.equippedWeapon=-1;
+if(typeof data.adminAbuseClaimedEvent!=="string")data.adminAbuseClaimedEvent="";
+if(typeof data.secretLuckyBalls!=="number")data.secretLuckyBalls=0;
 
 const regions=[
  {name:"초보자 마을",reward:15,enemy:["슬라임","고블린"]},
@@ -635,7 +675,7 @@ function resetGame(){
   lv:1, exp:0, gold:100, hp:100, maxHp:100, power:10, kills:0, click:0, miniWins:0,
   items:{}, discovered:{}, achievements:{}, logs:[],
   challengeTickets:3, challengeWins:0, challengeBest:0,
-  adminAbuseClaimedWeek:"", adminAbuseActive:false, tutorialDone:false
+  adminAbuseClaimedWeek:"", adminAbuseClaimedEvent:"", adminAbuseActive:false, secretLuckyBalls:0, weaponSlots:[], equippedWeapon:-1, tutorialDone:false
  };
  localStorage.setItem(SAVE,JSON.stringify(freshData));
  data=freshData;
@@ -824,10 +864,15 @@ function randomBattle(){
 function attack(){
  if(!enemy)return;
 
- const damage=data.power+Math.floor(Math.random()*10);
- enemy.hp-=damage;
-
- log(nameSafe(enemy.name)+"에게 "+damage+" 피해!");
+ const weapon=getEquippedWeapon();
+ const damage=weapon ? weapon.damage : data.power+Math.floor(Math.random()*10);
+ if(weapon && weapon.oneShot){
+  enemy.hp=0;
+  log(nameSafe(enemy.name)+"에게 "+weapon.name+"의 필살 한방!");
+ }else{
+  enemy.hp-=damage;
+  log(nameSafe(enemy.name)+"에게 "+damage+" 피해!");
+ }
 
  if(enemy.hp<=0){
   data.kills++;
@@ -931,8 +976,8 @@ function clickArena(){
 }
 
 const shop=[
- ["강철 검",80,"power",5],
- ["강화 검",180,"power",12],
+ ["강철 검",80,"weapon",5],
+ ["강화 검",180,"weapon",12],
  ["회복 물약",30,"potion",1],
  ["대형 회복 물약",70,"potion",3],
  ["행운의 부적",250,"luck",1]
@@ -945,40 +990,136 @@ function renderShop(){
    <p class="gold">${x[1]}G</p>
    <button onclick="buy(${i})">구매</button>
   </div>
- `).join("");
+ `).join("")+`
+  <div class="card secretBallCard secretBallGlow">
+   <span class="tag">어드민 어뷰즈 특별 상점</span>
+   <h3>시크릿 럭블</h3>
+   <p>1개에서 무작위 무기를 뽑습니다.</p>
+   <p class="muted">0.1% 한방컷 / 0.9% 100데미지 / 49% 2데미지 / 50% 1데미지</p>
+   <p class="gold">500G</p>
+   <button onclick="buySecretBall()">시크릿 럭블 구매</button>
+   <div class="muted" style="margin-top:8px">보유: <b>${data.secretLuckyBalls}</b>개</div>
+  </div>`;
 }
 
 function buy(i){
  const x=shop[i];
-
  if(data.gold<x[1]){
   toast("골드가 부족합니다.");
   return;
  }
-
  data.gold-=x[1];
-
- if(x[2]==="power")data.power+=x[3];
- else{
-  data.items[x[0]]=(data.items[x[0]]||0)+1;
+ if(x[2]==="weapon"){
+   addWeapon({name:x[0],damage:x[3],oneShot:false,source:"상점"});
+ }else{
+   data.items[x[0]]=(data.items[x[0]]||0)+1;
  }
-
  log(x[0]+"을(를) 구매했습니다.");
  save();
  renderAll();
 }
 
+function buySecretBall(){
+ const price=500;
+ if(data.gold<price){toast("골드가 부족합니다.");return;}
+ data.gold-=price;
+ data.secretLuckyBalls++;
+ log("시크릿 럭블을 구매했습니다!");
+ save(); renderAll();
+}
+
+function getEquippedWeapon(){
+ return data.weaponSlots[data.equippedWeapon]||null;
+}
+
+function addWeapon(w){
+ if(data.weaponSlots.length<4){
+   data.weaponSlots.push(w);
+   data.equippedWeapon=data.weaponSlots.length-1;
+   toast(w.name+" 획득! 자동 장착");
+   return true;
+ }
+ const choice=prompt("무기 슬롯이 가득 찼습니다.\n교체할 슬롯 번호 1~4를 입력하세요.\n취소하면 획득한 무기는 버려집니다.");
+ const n=Number(choice);
+ if(n>=1&&n<=4){
+   data.weaponSlots[n-1]=w;
+   data.equippedWeapon=n-1;
+   toast(w.name+"으로 교체했습니다!");
+   return true;
+ }
+ toast("새 무기를 버렸습니다.");
+ return false;
+}
+
+function equipWeapon(i){
+ if(!data.weaponSlots[i])return;
+ data.equippedWeapon=i;
+ log(data.weaponSlots[i].name+" 장착!");
+ save();renderAll();
+}
+
+function discardWeapon(i){
+ if(!data.weaponSlots[i])return;
+ const name=data.weaponSlots[i].name;
+ data.weaponSlots.splice(i,1);
+ if(data.equippedWeapon===i)data.equippedWeapon=-1;
+ else if(data.equippedWeapon>i)data.equippedWeapon--;
+ if(data.weaponSlots.length&&data.equippedWeapon<0)data.equippedWeapon=0;
+ log(name+"을(를) 버렸습니다.");
+ save();renderAll();
+}
+
+function openSecretLuckyBall(){
+ if(data.secretLuckyBalls<=0){toast("시크릿 럭블이 없습니다.");return;}
+ data.secretLuckyBalls--;
+ const r=Math.random()*100;
+ let w;
+ if(r<0.1)w={name:"럭키 원샷",damage:999999,oneShot:true,source:"시크릿 럭블"};
+ else if(r<1.0)w={name:"럭키 100",damage:100,oneShot:false,source:"시크릿 럭블"};
+ else if(r<50.0)w={name:"럭키 2",damage:2,oneShot:false,source:"시크릿 럭블"};
+ else w={name:"럭키 1",damage:1,oneShot:false,source:"시크릿 럭블"};
+ addWeapon(w);
+ log("시크릿 럭블 결과: "+w.name+"!");
+ save();renderAll();
+}
+
 function renderBag(){
  const keys=Object.keys(data.items);
+ const itemsHtml=keys.length
+  ?keys.map(k=>`
+   <div class="card">
+    <h3>${k}</h3>
+    <div>보유 ${data.items[k]}개</div>
+   </div>
+  `).join("")
+  :"<div class='card'><p class='muted'>일반 아이템이 없습니다.</p></div>";
 
- $("bagItems").innerHTML=keys.length
- ?keys.map(k=>`
-  <div class="card">
-   <h3>${k}</h3>
-   <div>보유 ${data.items[k]}개</div>
-  </div>
- `).join("")
- :"<div class='card'><p class='muted'>가방이 비어 있습니다.</p></div>";
+ const slots=Array.from({length:4},(_,i)=>{
+   const w=data.weaponSlots[i];
+   if(!w)return `<div class="weaponSlot empty"><div class="muted">슬롯 ${i+1}</div><div style="margin-top:25px">비어 있음</div></div>`;
+   const eq=data.equippedWeapon===i;
+   return `<div class="weaponSlot ${eq?'equipped':''}">
+     <div class="muted">슬롯 ${i+1}${eq?' • 장착 중':''}</div>
+     <div class="weaponName">${w.name}</div>
+     <div class="weaponDamage">${w.oneShot?'모든 몬스터 한방컷':'데미지 '+w.damage}</div>
+     <div class="weaponActions">
+       <button onclick="equipWeapon(${i})">${eq?'장착됨':'장착'}</button>
+       <button class="danger" onclick="discardWeapon(${i})">버리기</button>
+     </div>
+   </div>`;
+ }).join("");
+
+ $("bagItems").innerHTML=`
+   <div class="card" style="grid-column:1/-1">
+    <h3>무기 슬롯 4칸</h3>
+    <p class="muted">무기를 장착해서 전투 공격력을 바꿀 수 있습니다. 슬롯이 가득 차면 새 무기를 기존 슬롯과 교체할 수 있습니다.</p>
+    <div class="weaponSlots">${slots}</div>
+    <div class="row" style="margin-top:12px">
+      <span class="tag">시크릿 럭블 보유 ${data.secretLuckyBalls}개</span>
+      <button onclick="openSecretLuckyBall()">시크릿 럭블 열기</button>
+    </div>
+   </div>
+   ${itemsHtml}`;
 }
 
 const crafts=[
@@ -1794,42 +1935,52 @@ function renderAchievements(){
  }).join("");
 }
 
+function getAdminEventInfo(){
+ const now=getKSTNow();
+ const day=now.getDay();
+ const active=(day===0||day===3)&&now.getHours()===14&&now.getMinutes()<30;
+ return {now,active};
+}
 function isAdminAbuseActive(){
-  const now=getKSTNow();
-  return now.getDay()===0 && now.getHours()===14 && now.getMinutes()<30;
+ return getAdminEventInfo().active;
 }
 function addGold(n){
-  const amount=Math.max(0,Number(n)||0);
-  const finalAmount=isAdminAbuseActive()?amount*2:amount;
-  data.gold+=finalAmount;
-  return finalAmount;
+ const amount=Math.max(0,Number(n)||0);
+ const finalAmount=isAdminAbuseActive()?amount*2:amount;
+ data.gold+=finalAmount;
+ return finalAmount;
 }
 function getKSTNow(){
-  return new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Seoul"}));
+ return new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Seoul"}));
 }
 function getKSTWeekKey(d){
-  const x=new Date(d);
-  const day=x.getDay();
-  x.setDate(x.getDate()-day);
-  return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0");
+ const x=new Date(d),day=x.getDay();
+ x.setDate(x.getDate()-day);
+ return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0");
+}
+function getAdminEventKey(d){
+ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 }
 function updateAdminAbuse(){
-  const now=getKSTNow();
-  const active=now.getDay()===0 && now.getHours()===14 && now.getMinutes()<30;
-  const key=getKSTWeekKey(now);
-  if(active && data.adminAbuseClaimedWeek!==key){
-    data.challengeTickets=Math.min(10,data.challengeTickets+10);
-    data.adminAbuseClaimedWeek=key;
-    data.adminAbuseActive=true;
-    save();
-    toast("어드민 남용 발동! 도전권 10개 무료 지급!");
-  }
-  if(!active) data.adminAbuseActive=false;
-  const el=$("adminAbuseStatus");
-  if(el){
-    el.textContent=active?"진행 중! 골드 2배":"일요일 14:00~14:30 대기";
-    el.style.color=active?"#ff4f8b":"";
-  }
+ const info=getAdminEventInfo(),now=info.now,active=info.active;
+ const key=getAdminEventKey(now);
+ if(active && data.adminAbuseClaimedEvent!==key){
+   data.secretLuckyBalls+=2;
+   data.adminAbuseClaimedEvent=key;
+   data.adminAbuseActive=true;
+   save();
+   toast("어드민 어뷰즈! 시크릿 럭블 2개 지급!");
+   log("어드민 어뷰즈 발동! 시크릿 럭블 2개 획득!");
+ }
+ if(!active)data.adminAbuseActive=false;
+ const fx=$("adminAbuseFx"),banner=$("adminAbuseBanner");
+ if(fx)fx.classList.toggle("show",active);
+ if(banner){
+   banner.classList.toggle("show",active);
+   banner.textContent=active
+    ?"ADMIN ABUSE • 골드 2배 • 시크릿 럭블 2개 지급"
+    :"";
+ }
 }
 let adTimerId=null;
 let adStartTime=0;
@@ -1922,6 +2073,7 @@ renderAll();
 show("home");
 if(!data.tutorialDone) setTimeout(startTutorial,300);
 scheduleNextAd();
+setInterval(()=>{updateAdminAbuse();renderAll();},15000);
 </script>
 
 </body>
