@@ -5,263 +5,327 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
 <title>민서의 종합게임</title>
 <style>
-*{box-sizing:border-box}
-body{
- margin:0;
- font-family:Arial,"Noto Sans KR",sans-serif;
- background:#0b1020;
- color:#fff;
+* { box-sizing: border-box; }
+body {
+ margin: 0;
+ font-family: "Pretendard", "Noto Sans KR", Arial, sans-serif;
+ background: radial-gradient(circle at 50% 0%, #162244 0%, #080d1a 100%);
+ color: #f1f5f9;
+ min-height: 100vh;
 }
-button{
- border:0;
- border-radius:12px;
- padding:12px 16px;
- background:#26365f;
- color:#fff;
- font-weight:bold;
- cursor:pointer;
- transition:.15s;
+button {
+ border: 0;
+ border-radius: 12px;
+ padding: 12px 18px;
+ background: linear-gradient(135deg, #3a56e8, #5c7cfa);
+ color: #fff;
+ font-weight: bold;
+ cursor: pointer;
+ transition: all 0.2s ease;
+ box-shadow: 0 4px 14px rgba(58, 86, 232, 0.25);
 }
-button:hover{transform:translateY(-2px);filter:brightness(1.15)}
-button:active{transform:scale(.96)}
-#app{min-height:100vh}
-header{
- position:sticky;
- top:0;
- z-index:20;
- background:rgba(10,15,32,.95);
- border-bottom:1px solid #34436c;
- padding:12px;
+button:hover {
+ transform: translateY(-2px);
+ filter: brightness(1.15);
+ box-shadow: 0 6px 20px rgba(58, 86, 232, 0.4);
 }
-.headerInner{
- max-width:1200px;
- margin:auto;
- display:flex;
- justify-content:space-between;
- align-items:center;
- gap:10px;
- flex-wrap:wrap;
+button:active { transform: scale(0.96); }
+button.danger {
+ background: linear-gradient(135deg, #e63946, #d90429);
+ box-shadow: 0 4px 14px rgba(230, 57, 70, 0.3);
 }
-.title{
- font-size:22px;
- font-weight:900;
+button.danger:hover { box-shadow: 0 6px 20px rgba(230, 57, 70, 0.5); }
+
+#app { min-height: 100vh; padding-bottom: 30px; }
+header {
+ position: sticky;
+ top: 0;
+ z-index: 20;
+ background: rgba(10, 15, 32, 0.88);
+ backdrop-filter: blur(12px);
+ border-bottom: 1px solid rgba(97, 120, 255, 0.25);
+ padding: 12px;
+ box-shadow: 0 4px 20px rgba(0,0,0,0.4);
 }
-.stats{
- display:flex;
- gap:8px;
- flex-wrap:wrap;
+.headerInner {
+ max-width: 1200px;
+ margin: auto;
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ gap: 10px;
+ flex-wrap: wrap;
 }
-.stat{
- background:#17213d;
- padding:8px 12px;
- border-radius:10px;
- font-size:13px;
+.title {
+ font-size: 24px;
+ font-weight: 900;
+ background: linear-gradient(90deg, #a5b4fc, #c4b5fd);
+ -webkit-background-clip: text;
+ -webkit-text-fill-color: transparent;
 }
-nav{
- max-width:1200px;
- margin:10px auto 0;
- display:flex;
- gap:7px;
- overflow-x:auto;
- padding-bottom:2px;
+.stats {
+ display: flex;
+ gap: 8px;
+ flex-wrap: wrap;
+ align-items: center;
 }
-nav button{
- white-space:nowrap;
- background:#17213d;
+.stat {
+ background: rgba(23, 33, 61, 0.8);
+ padding: 8px 14px;
+ border-radius: 12px;
+ font-size: 13px;
+ font-weight: bold;
+ border: 1px solid rgba(255,255,255,0.08);
 }
-nav button.active{
- background:#526fff;
+.bgmToggleBtn {
+ padding: 8px 14px;
+ font-size: 12px;
+ border-radius: 12px;
+ background: #1e293b;
+ color: #94a3b8;
+ border: 1px solid #334155;
+ box-shadow: none;
 }
-main{
- max-width:1200px;
- margin:auto;
- padding:18px;
+.bgmToggleBtn.active {
+ background: linear-gradient(135deg, #10b981, #059669);
+ color: #fff;
+ border: 0;
+ box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
 }
-.view{display:none}
-.view.active{display:block}
-.panel{
- background:#121a31;
- border:1px solid #2b385d;
- border-radius:18px;
- padding:18px;
- margin-bottom:16px;
- box-shadow:0 10px 30px rgba(0,0,0,.18);
+
+nav {
+ max-width: 1200px;
+ margin: 12px auto 0;
+ display: flex;
+ gap: 8px;
+ overflow-x: auto;
+ padding-bottom: 4px;
 }
-h1,h2,h3{margin-top:0}
-.grid{
- display:grid;
- grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
- gap:12px;
+nav::-webkit-scrollbar { height: 6px; }
+nav::-webkit-scrollbar-thumb { background: #34436b; border-radius: 10px; }
+nav button {
+ white-space: nowrap;
+ background: #17213d;
+ color: #94a3b8;
+ box-shadow: none;
 }
-.card{
- background:#18233f;
- border:1px solid #34436b;
- border-radius:15px;
- padding:15px;
+nav button.active {
+ background: linear-gradient(135deg, #526fff, #818cf8);
+ color: #fff;
+ box-shadow: 0 0 15px rgba(82, 111, 255, 0.4);
 }
-.big{
- font-size:30px;
- font-weight:900;
+
+main { max-width: 1200px; margin: auto; padding: 18px; }
+.view { display: none; animation: fadeIn 0.25s ease-out; }
+.view.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+.panel {
+ background: rgba(18, 26, 49, 0.75);
+ backdrop-filter: blur(8px);
+ border: 1px solid rgba(97, 120, 255, 0.2);
+ border-radius: 20px;
+ padding: 20px;
+ margin-bottom: 18px;
+ box-shadow: 0 10px 30px rgba(0,0,0,0.25);
 }
-.muted{color:#9eabc9}
-.row{
- display:flex;
- gap:8px;
- flex-wrap:wrap;
- align-items:center;
+h1,h2,h3 { margin-top: 0; color: #f8fafc; }
+.grid {
+ display: grid;
+ grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+ gap: 12px;
 }
-.progress{
- height:12px;
- background:#080d1a;
- border-radius:99px;
- overflow:hidden;
+.card {
+ background: linear-gradient(145deg, #18233f, #0f172a);
+ border: 1px solid rgba(255,255,255,0.06);
+ border-radius: 16px;
+ padding: 16px;
+ transition: transform 0.2s ease, border-color 0.2s ease;
 }
-.progress>div{
- height:100%;
- background:#6178ff;
- width:0%;
+.card:hover { transform: translateY(-2px); border-color: rgba(97, 120, 255, 0.3); }
+.big { font-size: 30px; font-weight: 900; color: #fff; margin: 4px 0; }
+.muted { color: #94a3b8; font-size: 13px; line-height: 1.5; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.progress {
+ height: 14px;
+ background: #080d1a;
+ border-radius: 99px;
+ overflow: hidden;
+ border: 1px solid #202e52;
 }
-.log{
- max-height:220px;
- overflow:auto;
- background:#080d1a;
- border-radius:12px;
- padding:10px;
+.progress>div {
+ height: 100%;
+ background: linear-gradient(90deg, #6178ff, #a5b4fc);
+ width: 0%;
+ transition: width 0.3s ease;
 }
-.log div{
- padding:6px;
- border-bottom:1px solid #18233d;
+.log {
+ max-height: 220px;
+ overflow: auto;
+ background: #080d1a;
+ border-radius: 12px;
+ padding: 12px;
+ border: 1px solid #1e293b;
 }
-.danger{background:#722f3e}
-.good{background:#236347}
-.gold{color:#ffd75a}
-.miniCard{
- min-height:180px;
- display:flex;
- flex-direction:column;
- justify-content:space-between;
+.log div {
+ padding: 6px;
+ border-bottom: 1px solid #18233d;
+ font-size: 13px;
 }
-.miniCard button{width:100%}
-.tag{
- display:inline-block;
- padding:4px 8px;
- border-radius:8px;
- background:#2c3d68;
- font-size:12px;
- margin-bottom:8px;
+.log div:last-child { border-bottom: none; }
+.danger { background: #722f3e; }
+.good { background: #236347; }
+.gold { color: #ffd75a; font-weight: bold; }
+.miniCard {
+ min-height: 180px;
+ display: flex;
+ flex-direction: column;
+ justify-content: space-between;
 }
-#tutorial{position:fixed;inset:0;background:rgba(4,8,20,.86);z-index:200;display:none;align-items:center;justify-content:center;padding:18px}#tutorial.show{display:flex}.tutorialBox{width:min(560px,100%);background:#121a31;border:1px solid #6178ff;border-radius:20px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.45)}.tutorialStep{display:none}.tutorialStep.active{display:block}.tutorialIcon{font-size:42px;margin-bottom:8px}.tutorialDots{display:flex;gap:6px;margin:18px 0}.tutorialDots i{width:28px;height:5px;border-radius:5px;background:#34436b}.tutorialDots i.active{background:#6178ff}#toast{
- position:fixed;
- left:50%;
- bottom:22px;
- transform:translateX(-50%);
- background:#111a32;
- border:1px solid #6178ff;
- padding:12px 18px;
- border-radius:12px;
- opacity:0;
- pointer-events:none;
- transition:.25s;
- z-index:100;
+.miniCard button { width: 100%; }
+.tag {
+ display: inline-block;
+ padding: 4px 10px;
+ border-radius: 8px;
+ background: rgba(97, 120, 255, 0.18);
+ border: 1px solid rgba(97, 120, 255, 0.3);
+ color: #a5b4fc;
+ font-size: 12px;
+ font-weight: bold;
+ margin-bottom: 8px;
 }
-#toast.show{opacity:1}
-#miniArea{
- margin-top:15px;
+#tutorial { position: fixed; inset: 0; background: rgba(4,8,20,.88); backdrop-filter: blur(4px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 18px; }
+#tutorial.show { display: flex; }
+.tutorialBox { width: min(560px,100%); background: #121a31; border: 1px solid #6178ff; border-radius: 20px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+.tutorialStep { display: none; }
+.tutorialStep.active { display: block; }
+.tutorialIcon { font-size: 42px; margin-bottom: 8px; }
+.tutorialDots { display: flex; gap: 6px; margin: 18px 0; }
+.tutorialDots i { width: 28px; height: 5px; border-radius: 5px; background: #34436b; }
+.tutorialDots i.active { background: #6178ff; }
+
+#toast {
+ position: fixed;
+ left: 50%;
+ bottom: 26px;
+ transform: translateX(-50%) translateY(20px);
+ background: rgba(17, 26, 50, 0.95);
+ border: 1px solid #6178ff;
+ color: #fff;
+ padding: 12px 22px;
+ border-radius: 99px;
+ opacity: 0;
+ pointer-events: none;
+ transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+ z-index: 1000;
+ font-weight: bold;
+ box-shadow: 0 10px 30px rgba(0,0,0,0.4);
 }
-.miniBoard{
- min-height:250px;
- background:#080d1a;
- border:1px solid #2c3b63;
- border-radius:16px;
- padding:16px;
- position:relative;
- overflow:hidden;
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+#miniArea { margin-top: 15px; }
+.miniBoard {
+ min-height: 250px;
+ background: #080d1a;
+ border: 2px dashed #2c3b63;
+ border-radius: 16px;
+ padding: 16px;
+ position: relative;
+ overflow: hidden;
 }
-.target{
- position:absolute;
- width:55px;
- height:55px;
- border-radius:50%;
- background:#ff4f6d;
- border:5px solid #fff;
+.target {
+ position: absolute;
+ width: 55px;
+ height: 55px;
+ border-radius: 50%;
+ background: radial-gradient(circle, #ff4f6d, #dc2626);
+ border: 4px solid #fff;
+ box-shadow: 0 0 15px rgba(255, 79, 109, 0.6);
 }
-.memoryGrid{
- display:grid;
- grid-template-columns:repeat(4,1fr);
- gap:8px;
+.memoryGrid {
+ display: grid;
+ grid-template-columns: repeat(4,1fr);
+ gap: 8px;
 }
-.memoryCard{
- min-height:70px;
- font-size:24px;
- background:#26365f;
+.memoryCard {
+ min-height: 70px;
+ font-size: 24px;
+ background: #26365f;
+ border: 1px solid #3b5bdb;
+ border-radius: 10px;
+ font-weight: 900;
 }
-.memoryCard.open{background:#6178ff}
-.keypad{
- display:grid;
- grid-template-columns:repeat(3,1fr);
- gap:8px;
- max-width:330px;
+.memoryCard.open { background: linear-gradient(135deg, #6178ff, #3b5bdb); color: #fff; }
+.keypad {
+ display: grid;
+ grid-template-columns: repeat(3,1fr);
+ gap: 8px;
+ max-width: 330px;
 }
-.keypad button{
- font-size:20px;
-}
+.keypad button { font-size: 20px; }
+
 @media(max-width:600px){
- main{padding:10px}
- .panel{padding:13px}
- .title{font-size:18px}
- .memoryGrid{grid-template-columns:repeat(4,1fr)}
- .memoryCard{min-height:60px;padding:5px}
+ main { padding: 10px; }
+ .panel { padding: 14px; }
+ .title { font-size: 18px; }
+ .memoryGrid { grid-template-columns: repeat(4,1fr); }
+ .memoryCard { min-height: 60px; padding: 5px; }
 }
 
-#adOverlay{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;background:rgba(5,8,18,.78);backdrop-filter:blur(6px);padding:18px}
-#adOverlay.show{display:flex}
-#adBox{width:min(680px,94vw);border:1px solid #64748b;border-radius:24px;background:linear-gradient(145deg,#111827,#0b1220);box-shadow:0 24px 80px rgba(0,0,0,.55);overflow:hidden;cursor:pointer}
-#adTop{padding:14px 18px;background:rgba(255,255,255,.05);display:flex;justify-content:space-between;align-items:center;gap:10px}
-#adBadge{font-size:12px;font-weight:800;letter-spacing:.08em;color:#fbbf24}
-#adBody{padding:28px;text-align:center}
-#adChannel{font-size:clamp(24px,5vw,42px);font-weight:900;margin:8px 0 10px}
-#adTimer{font-size:18px;font-weight:800;margin:14px 0;color:#93c5fd}
-#adHint{font-size:13px;color:#94a3b8;line-height:1.6}
-#adSkip{margin-top:18px;display:none;width:100%;padding:12px;border:0;border-radius:12px;background:#334155;color:#fff;font-weight:800;cursor:pointer}
-#adSkip.ready{display:block}
-#adProgress{height:5px;background:#1e293b}
-#adProgressBar{height:100%;width:0;background:#60a5fa;transition:width .2s linear}
+#adOverlay { position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center; background: rgba(5,8,18,.82); backdrop-filter: blur(8px); padding: 18px; }
+#adOverlay.show { display: flex; }
+#adBox { width: min(680px,94vw); border: 1px solid #64748b; border-radius: 24px; background: linear-gradient(145deg,#111827,#0b1220); box-shadow: 0 24px 80px rgba(0,0,0,.6); overflow: hidden; cursor: pointer; }
+#adTop { padding: 14px 18px; background: rgba(255,255,255,.05); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+#adBadge { font-size: 12px; font-weight: 800; letter-spacing: .08em; color: #fbbf24; }
+#adBody { padding: 28px; text-align: center; }
+#adChannel { font-size: clamp(24px,5vw,42px); font-weight: 900; margin: 8px 0 10px; }
+#adTimer { font-size: 18px; font-weight: 800; margin: 14px 0; color: #93c5fd; }
+#adHint { font-size: 13px; color: #94a3b8; line-height: 1.6; }
+#adSkip { margin-top: 18px; display: none; width: 100%; padding: 12px; border: 0; border-radius: 12px; background: #334155; color: #fff; font-weight: 800; cursor: pointer; }
+#adSkip.ready { display: block; }
+#adProgress { height: 5px; background: #1e293b; }
+#adProgressBar { height: 100%; width: 0; background: #60a5fa; transition: width .2s linear; }
 
-
-/* ===== 무기 교체 + 어드민 어뷰즈 ===== */
-#adminAbuseFx{
- position:fixed;inset:0;z-index:18;pointer-events:none;display:none;
- background:linear-gradient(115deg,rgba(255,0,80,.12),rgba(255,220,0,.12),rgba(0,255,180,.12),rgba(0,120,255,.12),rgba(190,0,255,.12));
- background-size:400% 400%;animation:adminRainbow 3s linear infinite;
+#adminAbuseFx {
+ position: fixed; inset: 0; z-index: 18; pointer-events: none; display: none;
+ background: linear-gradient(115deg,rgba(255,0,80,.12),rgba(255,220,0,.12),rgba(0,255,180,.12),rgba(0,120,255,.12),rgba(190,0,255,.12));
+ background-size: 400% 400%; animation: adminRainbow 3s linear infinite;
 }
-#adminAbuseFx.show{display:block}
-#adminAbuseBanner{
- position:fixed;top:86px;left:50%;transform:translateX(-50%);
- z-index:19;pointer-events:none;display:none;
- padding:5px 14px;border-radius:999px;font-size:12px;font-weight:900;
- letter-spacing:.08em;background:rgba(10,15,32,.78);border:1px solid rgba(255,255,255,.28);
- box-shadow:0 0 18px rgba(255,255,255,.12);white-space:nowrap;
+#adminAbuseFx.show { display: block; }
+#adminAbuseBanner {
+ position: fixed; top: 86px; left: 50%; transform: translateX(-50%);
+ z-index: 19; pointer-events: none; display: none;
+ padding: 5px 14px; border-radius: 999px; font-size: 12px; font-weight: 900;
+ letter-spacing: .08em; background: rgba(10,15,32,.78); border: 1px solid rgba(255,255,255,.28);
+ box-shadow: 0 0 18px rgba(255,255,255,.12); white-space: nowrap;
 }
-#adminAbuseBanner.show{display:block;animation:adminText 1.2s ease-in-out infinite}
-@keyframes adminRainbow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-@keyframes adminText{0%,100%{opacity:.65}50%{opacity:1}}
-.weaponSlots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
-.weaponSlot{min-height:105px;background:#0c1328;border:1px solid #34436b;border-radius:14px;padding:10px}
-.weaponSlot.equipped{border:2px solid #61e7ff;box-shadow:0 0 16px rgba(97,231,255,.16)}
-.weaponSlot.empty{opacity:.55}
-.weaponName{font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.weaponDamage{font-size:13px;color:#ffd75a;margin:5px 0}
-.weaponActions{display:flex;gap:5px;margin-top:8px}
-.weaponActions button{padding:7px 8px;font-size:11px;flex:1}
-.secretBallCard{border:2px solid #ff4fd8!important;background:linear-gradient(145deg,#23132d,#131a35)!important}
-.secretBallGlow{animation:secretGlow 1.4s ease-in-out infinite}
-@keyframes secretGlow{50%{box-shadow:0 0 28px rgba(255,79,216,.25)}}
-@media(max-width:600px){.weaponSlots{grid-template-columns:repeat(2,1fr)}#adminAbuseBanner{top:74px}}
+#adminAbuseBanner.show { display: block; animation: adminText 1.2s ease-in-out infinite; }
+@keyframes adminRainbow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+@keyframes adminText { 0%,100% { opacity: .65; } 50% { opacity: 1; } }
 
+.weaponSlots { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-top: 12px; }
+.weaponSlot { min-height: 105px; background: #0c1328; border: 1px solid #34436b; border-radius: 14px; padding: 10px; }
+.weaponSlot.equipped { border: 2px solid #61e7ff; box-shadow: 0 0 16px rgba(97,231,255,.16); }
+.weaponSlot.empty { opacity: .55; }
+.weaponName { font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.weaponDamage { font-size: 13px; color: #ffd75a; margin: 5px 0; }
+.weaponActions { display: flex; gap: 5px; margin-top: 8px; }
+.weaponActions button { padding: 7px 8px; font-size: 11px; flex: 1; }
+.secretBallCard { border: 2px solid #ff4fd8!important; background: linear-gradient(145deg,#23132d,#131a35)!important; }
+.secretBallGlow { animation: secretGlow 1.4s ease-in-out infinite; }
+@keyframes secretGlow { 50% { box-shadow: 0 0 28px rgba(255,79,216,.25); } }
+@media(max-width:600px){ .weaponSlots { grid-template-columns: repeat(2,1fr); } #adminAbuseBanner { top: 74px; } }
 </style>
 </head>
 
 <body>
+
+<!-- BGM 오디오 재생기 -->
+<audio id="bgmAudio" loop preload="auto">
+  <source src="https://cdn.pixabay.com/download/audio/2022/02/22/audio_d1718ab41b.mp3?filename=8-bit-video-game-nostalgia-104241.mp3" type="audio/mpeg">
+</audio>
+
 <div id="adminAbuseFx"></div><div id="adminAbuseBanner"></div>
 <div id="adOverlay" aria-live="polite">
  <div id="adBox" onclick="openCurrentAd()">
@@ -280,13 +344,14 @@ h1,h2,h3{margin-top:0}
 
 <header>
  <div class="headerInner">
-  <div class="title">민서의 종합게임</div>
+  <div class="title">민서의 종합게임 🎮</div>
   <div class="stats">
    <div class="stat">레벨 <b id="lv">1</b></div>
    <div class="stat">EXP <b id="exp">0</b></div>
    <div class="stat">골드 <b id="gold">100</b></div>
    <div class="stat">전투력 <b id="power">10</b></div>
    <div class="stat">도전권 <b id="tickets">3</b></div>
+   <button id="bgmBtn" onclick="toggleBGM()" class="bgmToggleBtn">🎵 BGM OFF</button>
   </div>
  </div>
 
@@ -310,13 +375,14 @@ h1,h2,h3{margin-top:0}
 <section id="v_home" class="view active">
  <div class="panel">
   <h1>종합게임에 오신 것을 환영합니다</h1>
-  <p class="muted">모험하고, 전투하고, 미니게임을 플레이하면서 성장하세요.</p><div class="card" style="margin-top:12px;border:1px solid #d946ef">
-  <b>어드민 어뷰즈</b>
-  <div class="muted" style="margin-top:4px">수요일·일요일 14:00~14:30 · 골드 2배 · 시크릿 럭블 2개 · 수요일 타코럭블 5개 무료</div>
-  <div style="margin-top:5px">시크릿 럭블 보유: <b id="homeLuckyBalls">0</b>개 · 타코럭블 보유: <b id="homeTacoBalls">0</b>개</div>
-</div>
+  <p class="muted">모험하고, 전투하고, 미니게임을 플레이하면서 성장하세요.</p>
+  <div class="card" style="margin-top:12px;border:1px solid #d946ef">
+   <b>어드민 어뷰즈</b>
+   <div class="muted" style="margin-top:4px">수요일·일요일 14:00~14:30 · 골드 2배 · 시크릿 럭블 2개 · 수요일 타코럭블 5개 무료</div>
+   <div style="margin-top:5px">시크릿 럭블 보유: <b id="homeLuckyBalls">0</b>개 · 타코럭블 보유: <b id="homeTacoBalls">0</b>개</div>
+  </div>
 
-  <div class="grid">
+  <div class="grid" style="margin-top:12px">
    <div class="card">
     <div class="muted">현재 레벨</div>
     <div class="big" id="homeLv">1</div>
@@ -350,17 +416,18 @@ h1,h2,h3{margin-top:0}
   <h2>최근 기록</h2>
   <div id="homeLog" class="log"></div>
  </div>
-<div class="panel" style="margin-top:15px;border:1px solid #ef4444">
+
+ <div class="panel" style="margin-top:15px;border:1px solid #ef4444">
    <h3>게임 데이터 관리</h3>
    <p class="muted">처음부터 다시 플레이하고 싶다면 모든 진행 데이터를 초기화할 수 있습니다.</p>
    <button class="danger" onclick="resetGame()">모든 진행 데이터 초기화</button>
   </div>
- </section>
+</section>
 
 <section id="v_adventure" class="view">
  <div class="panel">
   <h2>모험</h2>
-  <p>지역을 탐험하면 적, 보물, 자원을 발견할 수 있습니다.</p>
+  <p class="muted">지역을 탐험하면 적, 보물, 자원을 발견할 수 있습니다.</p>
 
   <div class="grid" id="regions"></div>
 
@@ -389,7 +456,7 @@ h1,h2,h3{margin-top:0}
 <section id="v_click" class="view">
  <div class="panel">
   <h2>클릭 아레나</h2>
-  <p>화면을 빠르게 클릭해 점수를 얻으세요.</p>
+  <p class="muted">화면을 빠르게 클릭해 점수를 얻으세요.</p>
   <div style="text-align:center;padding:30px">
    <div class="big" id="clickScore">0</div>
    <button onclick="clickArena()" style="font-size:28px;padding:30px 60px">
@@ -402,14 +469,14 @@ h1,h2,h3{margin-top:0}
 <section id="v_mini" class="view">
  <div class="panel">
   <h2>미니게임</h2>
-<div class="card miniCard" style="margin-bottom:12px;border:2px solid #ff5c9a">
-      <div>
-        <span class="tag">외부 게임</span>
-        <h3>도파민 터지는 게임</h3>
-        <p class="muted">빠르게 즐기는 외부 미니게임입니다.</p>
-      </div>
-      <button onclick="location.href='https://dlalstj0315.github.io/qqqq/'">게임 시작</button>
+  <div class="card miniCard" style="margin-bottom:12px;border:2px solid #ff5c9a">
+    <div>
+      <span class="tag">외부 게임</span>
+      <h3>도파민 터지는 게임</h3>
+      <p class="muted">빠르게 즐기는 외부 미니게임입니다.</p>
     </div>
+    <button onclick="location.href='https://dlalstj0315.github.io/qqqq/'">게임 시작</button>
+  </div>
   <p class="muted">각 게임은 서로 다른 방식으로 플레이됩니다.</p>
 
   <div class="grid">
@@ -420,9 +487,7 @@ h1,h2,h3{margin-top:0}
      <h3>무조건해보세요 슈팅겜</h3>
      <p class="muted">본격 슈팅게임으로 이동합니다.</p>
     </div>
-    <button onclick="location.href='https://dlalstj0315.github.io/-22/'">
-     게임 시작
-    </button>
+    <button onclick="location.href='https://dlalstj0315.github.io/-22/'">게임 시작</button>
    </div>
 
    <div class="card miniCard">
@@ -431,9 +496,7 @@ h1,h2,h3{margin-top:0}
      <h3>선택게임</h3>
      <p class="muted">선택에 따라 결과가 달라지는 게임입니다.</p>
     </div>
-    <button onclick="location.href='https://dlalstj0315.github.io/txt/'">
-     게임 시작
-    </button>
+    <button onclick="location.href='https://dlalstj0315.github.io/txt/'">게임 시작</button>
    </div>
 
    <div class="card miniCard">
@@ -530,24 +593,24 @@ h1,h2,h3{margin-top:0}
 
   <div class="panel" style="margin-top:15px;margin-bottom:0">
    <div class="panel" style="margin-top:15px;border:1px solid #f59e0b">
-   <h3>홀짝 코인 게임</h3>
-   <p class="muted">게임 내 골드만 사용합니다. 맞히면 베팅액의 2배를 받고, 틀리면 베팅액을 잃습니다.</p>
-   <div class="card" style="margin-top:12px">
-    <div class="row">
-     <label for="coinBet"><b>베팅</b></label>
-     <input id="coinBet" type="number" min="1" step="1" value="10"
-      style="width:130px;padding:12px;border-radius:10px;border:1px solid #475569;background:#0b1020;color:#fff">
-     <span class="gold">보유: <b id="coinGameGold">${data.gold}</b>G</span>
+    <h3>홀짝 코인 게임</h3>
+    <p class="muted">게임 내 골드만 사용합니다. 맞히면 베팅액의 2배를 받고, 틀리면 베팅액을 잃습니다.</p>
+    <div class="card" style="margin-top:12px">
+     <div class="row">
+      <label for="coinBet"><b>베팅</b></label>
+      <input id="coinBet" type="number" min="1" step="1" value="10"
+       style="width:130px;padding:12px;border-radius:10px;border:1px solid #475569;background:#0b1020;color:#fff">
+      <span class="gold">보유: <b id="coinGameGold">100</b>G</span>
+     </div>
+     <div class="row" style="margin-top:12px">
+      <button onclick="playCoinFlip('odd')" style="flex:1">홀수</button>
+      <button onclick="playCoinFlip('even')" style="flex:1">짝수</button>
+     </div>
+     <div id="coinResult" class="muted" style="margin-top:12px;text-align:center">홀수 또는 짝수를 선택하세요.</div>
     </div>
-    <div class="row" style="margin-top:12px">
-     <button onclick="playCoinFlip('odd')" style="flex:1">홀수</button>
-     <button onclick="playCoinFlip('even')" style="flex:1">짝수</button>
-    </div>
-    <div id="coinResult" class="muted" style="margin-top:12px;text-align:center">홀수 또는 짝수를 선택하세요.</div>
    </div>
-  </div>
 
-  <h3>고위험 도전</h3>
+   <h3>고위험 도전</h3>
    <p class="muted">무료 도전권 1장을 사용합니다. 성공하면 큰 보상을 받고, 실패하면 도전권만 소모됩니다. 골드는 잃지 않습니다.</p>
    <div class="row">
     <div class="card" style="flex:1;min-width:180px">
@@ -564,7 +627,9 @@ h1,h2,h3{margin-top:0}
 
   <div class="card" style="margin-bottom:12px;border:1px solid #8b5cf6"><span class="tag">외부 미니게임</span><h3>공포 아닌 공포</h3><p class="muted">이상하게 긴장되지만 무섭지는 않은 외부 미니게임!</p><button onclick="location.href='https://dlalstj0315.github.io/eeee/'">게임 시작</button></div>
   <div class="card" style="margin-bottom:12px;border:1px solid #ef4444"><span class="tag">외부 게임</span><h3>공포라고 한다</h3><p class="muted">새로운 외부 미니게임입니다.</p><button onclick="location.href='https://dlalstj0315.github.io/sibal/'">게임 시작</button></div>
-  <div class="card" style="margin-bottom:12px;border:1px solid #22c55e"><span class="tag">외부 게임</span><h3>선택게임 2</h3><p class="muted">두 번째 선택형 외부 미니게임입니다.</p><button onclick="location.href='https://dlalstj0315.github.io/habe/'">게임 시작</button></div><div class="card" style="margin-bottom:12px;border:1px solid #38bdf8"><span class="tag">자회가 만든 게임</span><h3>자회가 만든 겜</h3><p class="muted">자회가 만든 게임을 플레이해보세요.</p><button onclick="location.href='https://jahoe.win/'">게임 시작</button></div><div id="miniArea"></div>
+  <div class="card" style="margin-bottom:12px;border:1px solid #22c55e"><span class="tag">외부 게임</span><h3>선택게임 2</h3><p class="muted">두 번째 선택형 외부 미니게임입니다.</p><button onclick="location.href='https://dlalstj0315.github.io/habe/'">게임 시작</button></div>
+  <div class="card" style="margin-bottom:12px;border:1px solid #38bdf8"><span class="tag">자회가 만든 게임</span><h3>자회가 만든 겜</h3><p class="muted">자회가 만든 게임을 플레이해보세요.</p><button onclick="location.href='https://jahoe.win/'">게임 시작</button></div>
+  <div id="miniArea"></div>
  </div>
 </section>
 
@@ -603,9 +668,6 @@ h1,h2,h3{margin-top:0}
  </div>
 </section>
 
-</main>
-</div>
-
 <section id="v_multi" class="view">
  <div class="panel">
   <h2>1 VS 1 멀티플레이어</h2>
@@ -627,7 +689,7 @@ h1,h2,h3{margin-top:0}
    </div>
    <p id="multiStatus" class="muted" style="margin-top:10px">방에 참가하지 않았습니다.</p>
   </div>
-  <div class="grid">
+  <div class="grid" style="margin-top:12px">
    <div class="card"><h3>1 VS 1 참가자</h3><div id="multiPlayers">없음</div></div>
    <div class="card">
     <h3>대전</h3>
@@ -637,11 +699,11 @@ h1,h2,h3{margin-top:0}
     <button id="multiAttackBtn" onclick="multiAttack()" style="margin-top:8px">공격</button>
    </div>
   </div>
-  <div class="card" id="multiMiniScoreCard">
+  <div class="card" id="multiMiniScoreCard" style="margin-top:12px">
    <h3>미니게임 점수 대결</h3>
    <p class="muted">외부 게임은 제외하고, 이 게임 안에 있는 미니게임만 같은 종목으로 점수를 겨룹니다.</p>
    <div class="row">
-    <select id="multiMiniGame" style="flex:1;padding:12px;border-radius:10px;border:0">
+    <select id="multiMiniGame" style="flex:1;padding:12px;border-radius:10px;border:0;background:#0b1020;color:#fff">
      <option value="target">움직이는 표적</option><option value="memory">카드 기억하기</option><option value="math">스피드 암산</option><option value="reaction">신호 반응</option><option value="guess">숫자 추리</option><option value="tap">탭 러시</option><option value="pattern">패턴 기억</option><option value="timing">정확한 타이밍</option><option value="door">안전한 문</option><option value="chest">황금 상자</option>
     </select>
     <button id="multiMiniStartBtn" onclick="startMultiMiniDuel()">미니게임 선택 & 시작</button>
@@ -650,13 +712,16 @@ h1,h2,h3{margin-top:0}
    <div id="multiMiniScores" style="margin-top:10px"></div>
   </div>
 
-  <div class="card">
+  <div class="card" style="margin-top:12px">
    <h3>대전 채팅</h3>
    <div id="multiChat" style="height:150px;overflow:auto;background:#0b1020;border-radius:12px;padding:10px;margin-bottom:8px"></div>
    <div class="row"><input id="multiMsg" placeholder="메시지 입력" maxlength="80" style="flex:1" onkeydown="if(event.key==='Enter')multiSendChat()"><button onclick="multiSendChat()">전송</button></div>
   </div>
  </div>
 </section>
+
+</main>
+</div>
 
 <div id="tutorial"><div class="tutorialBox"><div id="tStep1" class="tutorialStep active"><div class="tutorialIcon">START</div><h2>민서의 종합게임에 오신 것을 환영해!</h2><p class="muted">처음 플레이하는 사람을 위한 간단한 튜토리얼이 시작됩니다.</p></div><div id="tStep2" class="tutorialStep"><div class="tutorialIcon">EXP</div><h2>레벨업하기</h2><p>모험과 전투, 미니게임으로 <b>EXP</b>를 얻을 수 있어요. EXP가 가득 차면 레벨이 올라가고 능력치가 강해집니다.</p></div><div id="tStep3" class="tutorialStep"><div class="tutorialIcon">BATTLE</div><h2>전투하기</h2><p>모험에서 적을 만나면 전투 화면으로 이동합니다. <b>공격</b>으로 적을 쓰러뜨리고 골드와 EXP를 얻으세요.</p></div><div id="tStep4" class="tutorialStep"><div class="tutorialIcon">MINI</div><h2>미니게임</h2><p>미니게임에서는 다양한 방식으로 플레이할 수 있어요. 성공하면 골드와 EXP를 얻고, 일부 미니게임은 도전권도 줍니다.</p></div><div id="tStep5" class="tutorialStep"><div class="tutorialIcon">CHALLENGE</div><h2>고위험 도전</h2><p>도전권을 1장 사용해 특별한 도전에 참가할 수 있습니다. 성공하면 큰 보상을 받고, 실패하면 도전권만 소모됩니다.</p></div><div id="tStep6" class="tutorialStep"><div class="tutorialIcon">GO!</div><h2>튜토리얼 완료!</h2><p>이제 자유롭게 모험을 시작하세요. 진행 상황은 자동 저장됩니다.</p></div><div class="tutorialDots"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="row"><button id="tutorialPrev" onclick="tutorialPrev()">이전</button><button id="tutorialNext" onclick="tutorialNext()">다음</button><button id="tutorialSkip" onclick="finishTutorial()">튜토리얼 건너뛰기</button></div></div></div><div id="toast"></div>
 
@@ -732,13 +797,39 @@ let enemy=null;
 let battleHealUsed=false;
 let fleeFailed=false;
 
-// 서버 없이 같은 브라우저의 탭끼리 연결되는 멀티플레이어
 let currentView="home";
 let mini=null;
 let miniTimer=null;
 let reactionTimer=null;
 let tutorialIndex=1;
 let isResetting=false;
+let isBgmPlaying=false;
+
+/* =========================
+   BGM (배경음악) 토글
+========================= */
+function toggleBGM(){
+ const bgm=$("bgmAudio");
+ const btn=$("bgmBtn");
+ if(!bgm||!btn)return;
+ 
+ if(isBgmPlaying){
+  bgm.pause();
+  btn.textContent="🎵 BGM OFF";
+  btn.classList.remove("active");
+  toast("배경음악을 껐습니다.");
+ }else{
+  bgm.volume=0.35;
+  bgm.play().then(()=>{
+   btn.textContent="🎶 BGM ON";
+   btn.classList.add("active");
+   toast("배경음악 재생 중!");
+  }).catch(()=>{
+   toast("화면을 한번 클릭한 후 BGM 버튼을 클릭해주세요.");
+  });
+ }
+ isBgmPlaying=!isBgmPlaying;
+}
 
 function save(){
  localStorage.setItem(SAVE,JSON.stringify(data));
@@ -752,8 +843,6 @@ function resetGame(){
  miniTimer=null;
  reactionTimer=null;
 
- // 저장 데이터를 삭제하는 대신 새 기본 데이터를 즉시 저장한다.
- // 이렇게 하면 새로고침 과정에서 이전 데이터가 다시 저장되는 경우도 막을 수 있다.
  const freshData={
   lv:1, exp:0, gold:100, hp:100, maxHp:100, power:10, kills:0, click:0, miniWins:0,
   items:{}, discovered:{}, achievements:{}, logs:[],
@@ -767,7 +856,6 @@ function resetGame(){
  mini=null;
  currentView="home";
 
- // 현재 화면도 즉시 초기 상태로 바꾼 뒤 다시 불러온다.
  renderAll();
  show("home");
  toast("게임이 초기화되었습니다!");
@@ -776,6 +864,7 @@ function resetGame(){
 
 function toast(t){
  const e=$("toast");
+ if(!e)return;
  e.textContent=t;
  e.classList.add("show");
  setTimeout(()=>e.classList.remove("show"),1500);
@@ -848,10 +937,14 @@ function renderHeader(){
  $("exp").textContent=data.exp+"/"+(data.lv*100);
  $("gold").textContent=data.gold;
  $("power").textContent=data.power;
+ $("tickets").textContent=data.challengeTickets;
 
  $("homeLv").textContent=data.lv;
  $("homeGold").textContent=data.gold;
  $("kills").textContent=data.kills;
+ if($("homeLuckyBalls"))$("homeLuckyBalls").textContent=data.secretLuckyBalls;
+ if($("homeTacoBalls"))$("homeTacoBalls").textContent=data.tacoLuckyBalls;
+ if($("coinGameGold"))$("coinGameGold").textContent=data.gold;
 
  const count=Object.keys(data.achievements).length;
  $("achCount").textContent=count+" / 200";
@@ -1015,8 +1108,6 @@ function heal(){
   return;
  }
 
- // 실제 보유한 물약을 사용해서 회복합니다.
- // 대형 회복 물약이 있으면 75HP, 일반 회복 물약은 25HP를 회복합니다.
  let potionName="";
  let amount=0;
  if((data.items["대형 회복 물약"]||0)>0){
@@ -1035,7 +1126,6 @@ function heal(){
  data.hp+=amount;
  log(potionName+"을 사용해 HP "+amount+" 회복!");
 
- // 물약 사용은 한 턴을 소비합니다.
  data.hp-=enemy.atk;
  log(enemy.name+"의 반격! "+enemy.atk+" 피해");
  if(data.hp<=0){
@@ -1397,8 +1487,6 @@ function startMini(type){
   finished:false
  };
 
- const area=$("miniArea");
-
  if(type==="target")startTarget();
  if(type==="memory")startMemory();
  if(type==="math")startMath();
@@ -1421,7 +1509,7 @@ function startTarget(){
  $("miniArea").innerHTML=`
  <div class="panel">
   <h3>움직이는 표적</h3>
-  <p>15초 동안 움직이는 표적을 최대한 많이 맞히세요.</p>
+  <p class="muted">15초 동안 움직이는 표적을 최대한 많이 맞히세요.</p>
   <div>남은 시간: <b id="miniTime">15</b>초 / 명중: <b id="miniScore">0</b></div>
   <div class="miniBoard" id="targetBoard">
    <button class="target" id="movingTarget" onclick="targetHit()"></button>
@@ -1474,7 +1562,7 @@ function startMemory(){
  $("miniArea").innerHTML=`
  <div class="panel">
   <h3>카드 기억하기</h3>
-  <p>같은 문자끼리 짝을 맞히세요.</p>
+  <p class="muted">같은 문자끼리 짝을 맞히세요.</p>
   <div class="memoryGrid" id="memoryGrid"></div>
  </div>`;
 
@@ -1542,10 +1630,10 @@ function nextMath(){
  $("miniArea").innerHTML=`
  <div class="panel">
   <h3>스피드 암산</h3>
-  <p>문제 ${mini.q} / 5</p>
+  <p class="muted">문제 ${mini.q} / 5</p>
   <div class="big">${a} ${op} ${b} = ?</div>
   <input id="mathInput" type="number"
-   style="padding:12px;border-radius:10px;border:0;margin:10px 0">
+   style="padding:12px;border-radius:10px;border:1px solid #475569;background:#0b1020;color:#fff;margin:10px 0">
   <button onclick="answerMath()">확인</button>
  </div>`;
 
@@ -1570,9 +1658,9 @@ function startReaction(){
  $("miniArea").innerHTML=`
  <div class="panel">
   <h3>신호 반응</h3>
-  <p id="reactionText">빨간색일 때 기다리세요.</p>
+  <p id="reactionText" class="muted">빨간색일 때 기다리세요.</p>
   <button id="reactionBtn"
-   style="width:100%;height:150px;background:#a83246"
+   style="width:100%;height:150px;background:#a83246;font-size:24px"
    onclick="reactionClick()">기다리기</button>
  </div>`;
 
@@ -1607,9 +1695,9 @@ function startGuess(){
  $("miniArea").innerHTML=`
  <div class="panel">
   <h3>숫자 추리</h3>
-  <p>1부터 50 사이의 숫자를 맞혀보세요.</p>
+  <p class="muted">1부터 50 사이의 숫자를 맞혀보세요.</p>
   <input id="guessInput" type="number" min="1" max="50"
-   style="padding:12px;border-radius:10px;border:0">
+   style="padding:12px;border-radius:10px;border:1px solid #475569;background:#0b1020;color:#fff">
   <button onclick="guessNumber()">추리</button>
   <div id="guessHint" style="margin-top:15px"></div>
  </div>`;
@@ -1639,10 +1727,10 @@ function startTap(){
  $("miniArea").innerHTML=`
  <div class="panel" style="text-align:center">
   <h3>탭 러시</h3>
-  <p>7초 동안 버튼을 최대한 많이 누르세요.</p>
+  <p class="muted">7초 동안 버튼을 최대한 많이 누르세요.</p>
   <div class="big" id="tapCount">0</div>
-  <div id="tapTime">7</div>
-  <button onclick="tapRush()" style="font-size:30px;padding:35px 70px">
+  <div id="tapTime" class="muted">7</div>
+  <button onclick="tapRush()" style="font-size:30px;padding:35px 70px;margin-top:10px">
    TAP
   </button>
  </div>`;
@@ -1672,7 +1760,7 @@ function startPattern(){
  $("miniArea").innerHTML=`
  <div class="panel">
   <h3>패턴 기억</h3>
-  <p id="patternText">잠시 후 패턴이 나타납니다.</p>
+  <p id="patternText" class="muted">잠시 후 패턴이 나타납니다.</p>
   <div class="grid" id="patternGrid"></div>
  </div>`;
 
@@ -1731,11 +1819,11 @@ function startTiming(){
  $("miniArea").innerHTML=`
  <div class="panel">
   <h3>정확한 타이밍</h3>
-  <p>파란 구간 안에서 멈추세요.</p>
-  <div style="height:45px;background:#17213d;border-radius:20px;position:relative;overflow:hidden">
+  <p class="muted">파란 구간 안에서 멈추세요.</p>
+  <div style="height:45px;background:#17213d;border-radius:20px;position:relative;overflow:hidden;border:1px solid #334155">
    <div style="position:absolute;left:42%;width:16%;height:100%;background:#317a55"></div>
    <div id="timingMarker"
-    style="position:absolute;top:5px;width:35px;height:35px;background:#ff596d;border-radius:50%"></div>
+    style="position:absolute;top:5px;width:35px;height:35px;background:#ff596d;border-radius:50%;box-shadow:0 0 10px #ff596d"></div>
   </div>
   <button onclick="stopTiming()" style="margin-top:15px;width:100%">멈추기</button>
  </div>`;
@@ -1772,7 +1860,7 @@ function startDoor(){
  $("miniArea").innerHTML=`
  <div class="panel">
   <h3>안전한 문</h3>
-  <p>세 개의 문 중 안전한 문 하나를 선택하세요.</p>
+  <p class="muted">세 개의 문 중 안전한 문 하나를 선택하세요.</p>
   <div class="grid">
    <button onclick="chooseDoor(0)" style="font-size:35px">1</button>
    <button onclick="chooseDoor(1)" style="font-size:35px">2</button>
@@ -1793,7 +1881,7 @@ function startChest(){
  $("miniArea").innerHTML=`
  <div class="panel">
   <h3>황금 상자</h3>
-  <p>하나의 상자를 선택하세요.</p>
+  <p class="muted">하나의 상자를 선택하세요.</p>
   <div class="grid">
    <button onclick="chooseChest(0)" style="font-size:40px">BOX</button>
    <button onclick="chooseChest(1)" style="font-size:40px">BOX</button>
@@ -1852,7 +1940,7 @@ function finishMini(win,score){
   $("miniArea").innerHTML=`
    <div class="panel">
     <h3>${win?"게임 성공!":"게임 종료"}</h3>
-    <p>${win?"보상을 획득했습니다.":"다시 도전할 수 있습니다."}</p>
+    <p class="muted">${win?"보상을 획득했습니다.":"다시 도전할 수 있습니다."}</p>
     <button onclick="show('mini')">미니게임 목록으로</button>
    </div>`;
  },100);
@@ -1902,7 +1990,6 @@ function startChallenge(){
  window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
 }
 
-/* 도전 성공 시 일반 미니게임보다 큰 보상 */
 const normalFinishMini=finishMini;
 finishMini=function(win,score){
  if(mini&&mini.scoreDuel){
@@ -1911,7 +1998,7 @@ finishMini=function(win,score){
   if(reactionTimer){clearTimeout(reactionTimer);reactionTimer=null;}
   mini=null;
   setTimeout(()=>{
-   if($("miniArea"))$("miniArea").innerHTML=`<div class="panel"><h3>점수 제출 완료!</h3><p>내 점수: <b>${Math.max(0,Number(score)||0)}</b>점</p><p>상대방 결과를 기다리는 중...</p><button onclick="show('multi')">멀티플레이어로 돌아가기</button></div>`;
+   if($("miniArea"))$("miniArea").innerHTML=`<div class="panel"><h3>점수 제출 완료!</h3><p>내 점수: <b>${Math.max(0,Number(score)||0)}</b>점</p><p class="muted">상대방 결과를 기다리는 중...</p><button onclick="show('multi')">멀티플레이어로 돌아가기</button></div>`;
   },100);
   return;
  }
@@ -1943,7 +2030,7 @@ finishMini=function(win,score){
    $("miniArea").innerHTML=`
     <div class="panel">
      <h3>${win?"도전 성공!":"도전 실패"}</h3>
-     <p>${win?"큰 보상을 획득했습니다.":"도전권 1장을 잃었습니다. 골드는 차감되지 않았습니다."}</p>
+     <p class="muted">${win?"큰 보상을 획득했습니다.":"도전권 1장을 잃었습니다. 골드는 차감되지 않았습니다."}</p>
      <p>남은 도전권: <b>${data.challengeTickets}</b>장</p>
      <button onclick="show('mini')">미니게임 목록으로</button>
     </div>`;
@@ -2126,7 +2213,6 @@ function unlock(id){
  save();
 }
 
-
 function checkAutomaticAchievements(){
  const checks={
   level5:()=>data.lv>=5, level10:()=>data.lv>=10, level20:()=>data.lv>=20,
@@ -2267,7 +2353,6 @@ function skipAd(){
 }
 
 // ==================== 1 VS 1 온라인 멀티플레이어 ====================
-// PeerJS를 이용해 서로 다른 PC/휴대폰에서도 6자리 방 코드로 1 VS 1 연결
 let multiPeer=null;
 let multiConn=null;
 let multiRoom="";
@@ -2394,7 +2479,6 @@ function multiReceiveOnline(m){
   if(multiMiniDuel&&multiMiniDuel.status==="playing"){multiSend({type:"miniDuelBusy"});return;}
   const hostGame=$("multiMiniGame")?$("multiMiniGame").value:"target";
   const guestGame=multiMiniNames[m.game]?m.game:"target";
-  // 미니게임 선택권은 호스트 50% / 참가자 50%
   const chooser=Math.random()<0.5?"host":"guest";
   const game=chooser==="host"?hostGame:guestGame;
   const round=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -2445,7 +2529,6 @@ function startMultiMiniDuel(){
  if(!multiReady||!multiConn||!multiConn.open){toast("먼저 상대와 1 VS 1 방을 연결하세요!");return;}
  if(multiMiniDuel&&multiMiniDuel.status==="playing"){toast("이미 미니게임 점수 대결이 진행 중입니다!");return;}
  const type=$("multiMiniGame")?$("multiMiniGame").value:"target";
- // 버튼을 누른 쪽의 선택을 주최자에게 보내고, 주최자가 호스트/참가자 중 50:50으로 선택권을 결정한다.
  if(multiRole==="host"){
   const chooser=Math.random()<0.5?"host":"guest";
   const guestGame=type;
@@ -2564,7 +2647,7 @@ function renderMulti(){
 }
 
 function renderAll(){
-  updateAdminAbuse();
+ updateAdminAbuse();
  checkAutomaticAchievements();
  checkLateAchievements();
  checkAdAchievements();
@@ -2596,4 +2679,3 @@ setInterval(()=>{updateAdminAbuse();updateTacoAdminAbuse();renderAll();},15000);
 
 </body>
 </html>
-```
