@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -302,6 +301,7 @@ h1,h2,h3{margin-top:0}
   <button data-v="craft" onclick="show('craft')">제작</button>
   <button data-v="book" onclick="show('book')">도감</button>
   <button data-v="ach" onclick="show('ach')">업적</button>
+  <button data-v="multi" onclick="show('multi')">멀티플레이어</button>
  </nav>
 </header>
 
@@ -312,8 +312,8 @@ h1,h2,h3{margin-top:0}
   <h1>종합게임에 오신 것을 환영합니다</h1>
   <p class="muted">모험하고, 전투하고, 미니게임을 플레이하면서 성장하세요.</p><div class="card" style="margin-top:12px;border:1px solid #d946ef">
   <b>어드민 어뷰즈</b>
-  <div class="muted" style="margin-top:4px">수요일·일요일 14:00~14:30 · 골드 2배 · 시크릿 럭블 2개 자동 지급</div>
-  <div style="margin-top:5px">시크릿 럭블 보유: <b id="homeLuckyBalls">0</b>개</div>
+  <div class="muted" style="margin-top:4px">수요일·일요일 14:00~14:30 · 골드 2배 · 시크릿 럭블 2개 · 수요일 타코럭블 5개 무료</div>
+  <div style="margin-top:5px">시크릿 럭블 보유: <b id="homeLuckyBalls">0</b>개 · 타코럭블 보유: <b id="homeTacoBalls">0</b>개</div>
 </div>
 
   <div class="grid">
@@ -529,7 +529,25 @@ h1,h2,h3{margin-top:0}
   </div>
 
   <div class="panel" style="margin-top:15px;margin-bottom:0">
-   <h3>고위험 도전</h3>
+   <div class="panel" style="margin-top:15px;border:1px solid #f59e0b">
+   <h3>홀짝 코인 게임</h3>
+   <p class="muted">게임 내 골드만 사용합니다. 맞히면 베팅액의 2배를 받고, 틀리면 베팅액을 잃습니다.</p>
+   <div class="card" style="margin-top:12px">
+    <div class="row">
+     <label for="coinBet"><b>베팅</b></label>
+     <input id="coinBet" type="number" min="1" step="1" value="10"
+      style="width:130px;padding:12px;border-radius:10px;border:1px solid #475569;background:#0b1020;color:#fff">
+     <span class="gold">보유: <b id="coinGameGold">${data.gold}</b>G</span>
+    </div>
+    <div class="row" style="margin-top:12px">
+     <button onclick="playCoinFlip('odd')" style="flex:1">홀수</button>
+     <button onclick="playCoinFlip('even')" style="flex:1">짝수</button>
+    </div>
+    <div id="coinResult" class="muted" style="margin-top:12px;text-align:center">홀수 또는 짝수를 선택하세요.</div>
+   </div>
+  </div>
+
+  <h3>고위험 도전</h3>
    <p class="muted">무료 도전권 1장을 사용합니다. 성공하면 큰 보상을 받고, 실패하면 도전권만 소모됩니다. 골드는 잃지 않습니다.</p>
    <div class="row">
     <div class="card" style="flex:1;min-width:180px">
@@ -588,8 +606,61 @@ h1,h2,h3{margin-top:0}
 </main>
 </div>
 
+<section id="v_multi" class="view">
+ <div class="panel">
+  <h2>1 VS 1 멀티플레이어</h2>
+  <p class="muted">주최자가 방을 만들면 6자리 코드가 생성됩니다. 상대방은 그 코드를 입력해 1 VS 1 대전에 참가할 수 있습니다.</p>
+  <div class="card">
+   <div class="row">
+    <input id="multiName" placeholder="닉네임" maxlength="12" style="flex:1">
+    <input id="multiRoom" placeholder="상대가 준 6자리 코드" maxlength="6" inputmode="numeric" style="flex:1">
+   </div>
+   <div class="row" style="margin-top:8px">
+    <button onclick="multiCreateRoom()">1 VS 1 방 만들기</button>
+    <button onclick="multiJoinRoom()">코드로 참가</button>
+    <button onclick="multiLeaveRoom()">나가기</button>
+   </div>
+   <div id="multiCodeBox" style="display:none;margin-top:12px;padding:16px;border-radius:14px;background:#111a35;text-align:center">
+    <div class="muted">상대에게 이 코드를 알려주세요</div>
+    <div id="multiCode" style="font-size:34px;font-weight:900;letter-spacing:7px;margin:6px 0"></div>
+    <button onclick="multiCopyCode()">코드 복사</button>
+   </div>
+   <p id="multiStatus" class="muted" style="margin-top:10px">방에 참가하지 않았습니다.</p>
+  </div>
+  <div class="grid">
+   <div class="card"><h3>1 VS 1 참가자</h3><div id="multiPlayers">없음</div></div>
+   <div class="card">
+    <h3>대전</h3>
+    <div id="multiEnemy">주최자가 방을 만들고 상대를 기다리는 중입니다.</div>
+    <div id="multiTurn" style="margin-top:10px;font-weight:900"></div>
+    <button id="multiStartBtn" onclick="multiStartBattle()" style="margin-top:8px">대전 시작</button>
+    <button id="multiAttackBtn" onclick="multiAttack()" style="margin-top:8px">공격</button>
+   </div>
+  </div>
+  <div class="card" id="multiMiniScoreCard">
+   <h3>미니게임 점수 대결</h3>
+   <p class="muted">외부 게임은 제외하고, 이 게임 안에 있는 미니게임만 같은 종목으로 점수를 겨룹니다.</p>
+   <div class="row">
+    <select id="multiMiniGame" style="flex:1;padding:12px;border-radius:10px;border:0">
+     <option value="target">움직이는 표적</option><option value="memory">카드 기억하기</option><option value="math">스피드 암산</option><option value="reaction">신호 반응</option><option value="guess">숫자 추리</option><option value="tap">탭 러시</option><option value="pattern">패턴 기억</option><option value="timing">정확한 타이밍</option><option value="door">안전한 문</option><option value="chest">황금 상자</option>
+    </select>
+    <button id="multiMiniStartBtn" onclick="startMultiMiniDuel()">미니게임 선택 & 시작</button>
+   </div>
+   <div id="multiMiniScoreStatus" class="muted" style="margin-top:10px">상대와 연결한 뒤 미니게임 종목을 선택하세요.</div>
+   <div id="multiMiniScores" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+   <h3>대전 채팅</h3>
+   <div id="multiChat" style="height:150px;overflow:auto;background:#0b1020;border-radius:12px;padding:10px;margin-bottom:8px"></div>
+   <div class="row"><input id="multiMsg" placeholder="메시지 입력" maxlength="80" style="flex:1" onkeydown="if(event.key==='Enter')multiSendChat()"><button onclick="multiSendChat()">전송</button></div>
+  </div>
+ </div>
+</section>
+
 <div id="tutorial"><div class="tutorialBox"><div id="tStep1" class="tutorialStep active"><div class="tutorialIcon">START</div><h2>민서의 종합게임에 오신 것을 환영해!</h2><p class="muted">처음 플레이하는 사람을 위한 간단한 튜토리얼이 시작됩니다.</p></div><div id="tStep2" class="tutorialStep"><div class="tutorialIcon">EXP</div><h2>레벨업하기</h2><p>모험과 전투, 미니게임으로 <b>EXP</b>를 얻을 수 있어요. EXP가 가득 차면 레벨이 올라가고 능력치가 강해집니다.</p></div><div id="tStep3" class="tutorialStep"><div class="tutorialIcon">BATTLE</div><h2>전투하기</h2><p>모험에서 적을 만나면 전투 화면으로 이동합니다. <b>공격</b>으로 적을 쓰러뜨리고 골드와 EXP를 얻으세요.</p></div><div id="tStep4" class="tutorialStep"><div class="tutorialIcon">MINI</div><h2>미니게임</h2><p>미니게임에서는 다양한 방식으로 플레이할 수 있어요. 성공하면 골드와 EXP를 얻고, 일부 미니게임은 도전권도 줍니다.</p></div><div id="tStep5" class="tutorialStep"><div class="tutorialIcon">CHALLENGE</div><h2>고위험 도전</h2><p>도전권을 1장 사용해 특별한 도전에 참가할 수 있습니다. 성공하면 큰 보상을 받고, 실패하면 도전권만 소모됩니다.</p></div><div id="tStep6" class="tutorialStep"><div class="tutorialIcon">GO!</div><h2>튜토리얼 완료!</h2><p>이제 자유롭게 모험을 시작하세요. 진행 상황은 자동 저장됩니다.</p></div><div class="tutorialDots"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="row"><button id="tutorialPrev" onclick="tutorialPrev()">이전</button><button id="tutorialNext" onclick="tutorialNext()">다음</button><button id="tutorialSkip" onclick="finishTutorial()">튜토리얼 건너뛰기</button></div></div></div><div id="toast"></div>
 
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 "use strict";
 
@@ -625,31 +696,43 @@ if(!Array.isArray(data.weaponSlots))data.weaponSlots=[];
 if(typeof data.equippedWeapon!=="number")data.equippedWeapon=-1;
 if(typeof data.adminAbuseClaimedEvent!=="string")data.adminAbuseClaimedEvent="";
 if(typeof data.secretLuckyBalls!=="number")data.secretLuckyBalls=0;
+if(typeof data.tacoLuckyBalls!=="number")data.tacoLuckyBalls=0;
 
 const regions=[
- {name:"초보자 마을",reward:15,enemy:["슬라임","고블린"]},
- {name:"푸른 숲",reward:25,enemy:["고블린","박쥐"]},
- {name:"수정 동굴",reward:40,enemy:["골렘","박쥐"]},
- {name:"폐허 도시",reward:55,enemy:["로봇","망령"]},
- {name:"황금 사막",reward:75,enemy:["전갈","미라"]},
- {name:"고대 신전",reward:110,enemy:["수호자","용"]}
+ {name:"초보자 마을",required:1,reward:15,enemy:["슬라임","고블린"]},
+ {name:"푸른 숲",required:3,reward:25,enemy:["고블린","박쥐","늑대"]},
+ {name:"수정 동굴",required:6,reward:40,enemy:["골렘","박쥐","오크"]},
+ {name:"폐허 도시",required:10,reward:55,enemy:["로봇","망령","마법사"]},
+ {name:"황금 사막",required:15,reward:75,enemy:["전갈","미라","거인"]},
+ {name:"고대 신전",required:20,reward:110,enemy:["수호자","뱀파이어"]},
+ {name:"어둠의 성",required:25,reward:160,enemy:["뱀파이어","거인","악마"]},
+ {name:"마왕의 영역",required:30,reward:250,enemy:["악마","용"]}
 ];
 
 const monsters={
  "슬라임":{hp:45,atk:7,reward:15},
  "고블린":{hp:60,atk:10,reward:20},
  "박쥐":{hp:70,atk:12,reward:25},
+ "늑대":{hp:95,atk:14,reward:32},
  "골렘":{hp:130,atk:17,reward:40},
+ "오크":{hp:145,atk:19,reward:48},
  "로봇":{hp:150,atk:20,reward:50},
  "망령":{hp:170,atk:22,reward:60},
+ "마법사":{hp:185,atk:25,reward:68},
  "전갈":{hp:190,atk:25,reward:70},
  "미라":{hp:230,atk:28,reward:80},
+ "거인":{hp:300,atk:32,reward:105},
  "수호자":{hp:350,atk:35,reward:130},
- "용":{hp:650,atk:48,reward:300}
+ "뱀파이어":{hp:420,atk:40,reward:170},
+ "용":{hp:650,atk:48,reward:300},
+ "악마":{hp:850,atk:58,reward:450}
 };
 
 let enemy=null;
 let battleHealUsed=false;
+let fleeFailed=false;
+
+// 서버 없이 같은 브라우저의 탭끼리 연결되는 멀티플레이어
 let currentView="home";
 let mini=null;
 let miniTimer=null;
@@ -675,7 +758,8 @@ function resetGame(){
   lv:1, exp:0, gold:100, hp:100, maxHp:100, power:10, kills:0, click:0, miniWins:0,
   items:{}, discovered:{}, achievements:{}, logs:[],
   challengeTickets:3, challengeWins:0, challengeBest:0,
-  adminAbuseClaimedWeek:"", adminAbuseClaimedEvent:"", adminAbuseActive:false, secretLuckyBalls:0, weaponSlots:[], equippedWeapon:-1, tutorialDone:false
+  adminAbuseClaimedWeek:"", adminAbuseClaimedEvent:"", adminAbuseActive:false, secretLuckyBalls:0, tacoLuckyBalls:0,
+  tacoAdminClaimedEvent:'', weaponSlots:[], equippedWeapon:-1, tutorialDone:false
  };
  localStorage.setItem(SAVE,JSON.stringify(freshData));
  data=freshData;
@@ -717,6 +801,11 @@ function gainExp(n){
 }
 
 function show(v){
+ if(enemy && v!=="battle" && v!=="multi"){
+  toast("전투 중에는 다른 메뉴를 이용할 수 없습니다!");
+  currentView="battle";
+  v="battle";
+ }
  currentView=v;
 
  document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
@@ -779,18 +868,24 @@ function renderLogs(){
 }
 
 function renderRegions(){
- $("regions").innerHTML=regions.map((r,i)=>`
-  <div class="card">
+ $("regions").innerHTML=regions.map((r,i)=>{
+  const locked=data.lv<r.required;
+  return `
+  <div class="card" style="opacity:${locked?.58:1}">
    <span class="tag">지역 ${i+1}</span>
    <h3>${r.name}</h3>
-   <p class="muted">탐험 보상 최대 ${r.reward}G</p>
-   <button onclick="explore(${i})">탐험</button>
-  </div>
- `).join("");
+   <p class="muted">${locked?`레벨 ${r.required}에 해금됩니다.`:`탐험 보상 최대 ${r.reward}G`}</p>
+   <button ${locked?'disabled':''} onclick="explore(${i})">${locked?'잠김':'탐험'}</button>
+  </div>`;
+ }).join("");
 }
 
 function explore(i){
  const r=regions[i];
+ if(!r || data.lv<r.required){
+  toast("아직 잠긴 지역입니다. 레벨을 더 올려주세요.");
+  return;
+ }
  const roll=Math.random();
 
  if(roll<.55){
@@ -802,6 +897,7 @@ function explore(i){
    atk:monsters[name].atk,
    reward:monsters[name].reward
   };
+  data.discovered[name]=true;
   log(r.name+"에서 "+name+"을(를) 발견했습니다!");
   show("battle");
  }else if(roll<.82){
@@ -845,6 +941,7 @@ function renderBattle(){
 }
 
 function randomBattle(){
+ if(enemy){toast("이미 전투 중입니다!");return;}
  const names=Object.keys(monsters);
  const name=names[Math.floor(Math.random()*names.length)];
 
@@ -855,7 +952,9 @@ function randomBattle(){
   atk:monsters[name].atk,
   reward:monsters[name].reward
  };
+ data.discovered[name]=true;
  battleHealUsed=false;
+ fleeFailed=false;
 
  log(name+"이(가) 나타났습니다!");
  renderAll();
@@ -884,6 +983,7 @@ function attack(){
   if(data.kills>=50)unlock("killer50");
   enemy=null;
   battleHealUsed=false;
+  fleeFailed=false;
   save();
   renderAll();
   return;
@@ -951,9 +1051,32 @@ function heal(){
 
 function flee(){
  if(!enemy)return;
- log(enemy.name+"에게서 도망쳤습니다.");
- enemy=null;
- battleHealUsed=false;
+ if(fleeFailed){
+  toast("도망 실패 후에는 이 전투에서 다시 도망칠 수 없습니다!");
+  log("도망은 이미 한 번 실패해서 다시 시도할 수 없습니다.");
+  return;
+ }
+ const roll=Math.floor(Math.random()*100)+1;
+ if(roll<=30){
+  log(enemy.name+"에게서 도망치는 데 성공했습니다! (도망 판정 "+roll+"/100, 성공 기준 1~30)");
+  toast("도망 성공! "+roll+"/100");
+  enemy=null;
+  battleHealUsed=false;
+  fleeFailed=false;
+ }else{
+  fleeFailed=true;
+  log("도망에 실패했습니다! (도망 판정 "+roll+"/100) "+enemy.name+"의 반격! 이제 다시 도망칠 수 없습니다.");
+  toast("도망 실패! 이번 전투에서는 재도망 불가");
+  data.hp-=enemy.atk;
+  if(data.hp<=0){
+   data.hp=data.maxHp;
+   data.gold=Math.max(0,data.gold-10);
+   enemy=null;
+   battleHealUsed=false;
+   fleeFailed=false;
+   log("도망 실패 후 쓰러졌습니다. 회복 후 마을로 돌아왔습니다.");
+  }
+ }
  save();
  renderAll();
 }
@@ -999,6 +1122,15 @@ function renderShop(){
    <p class="gold">500G</p>
    <button onclick="buySecretBall()">시크릿 럭블 구매</button>
    <div class="muted" style="margin-top:8px">보유: <b>${data.secretLuckyBalls}</b>개</div>
+  </div>
+  <div class="card secretBallCard" style="border-color:#f59e0b!important;background:linear-gradient(145deg,#2b1d0c,#17182d)!important">
+   <span class="tag">신규 럭블</span>
+   <h3>타코럭블</h3>
+   <p>열면 무작위 데미지 무기를 획득합니다.</p>
+   <p class="muted">1% 100데미지 / 49% 20데미지 / 50% 10데미지</p>
+   <p class="gold">300G</p>
+   <button onclick="buyTacoBall()">타코럭블 구매</button>
+   <div class="muted" style="margin-top:8px">보유: <b>${data.tacoLuckyBalls}</b>개</div>
   </div>`;
 }
 
@@ -1025,6 +1157,66 @@ function buySecretBall(){
  data.gold-=price;
  data.secretLuckyBalls++;
  log("시크릿 럭블을 구매했습니다!");
+ save(); renderAll();
+}
+
+function updateTacoAdminAbuse(){
+  const now=new Date(), day=now.getDay(), hour=now.getHours(), minute=now.getMinutes();
+  const active=day===3 && hour===14 && minute<30;
+  const key=`${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+  if(active && data.tacoAdminClaimedEvent!==key){
+    data.tacoLuckyBalls+=5;
+    data.tacoAdminClaimedEvent=key;
+    log('수요일 어드민 어뷰즈: 타코럭블 5개 무료 지급');
+    toast('🌮 타코럭블 5개 무료 지급!');
+    save();
+  }
+}
+function buyTacoBall(){
+ const price=300;
+ if(data.gold<price){toast("골드가 부족합니다.");return;}
+ data.gold-=price;
+ data.tacoLuckyBalls++;
+ log("타코럭블을 구매했습니다!");
+ save(); renderAll();
+}
+
+function openTacoLuckyBall(){
+ if(data.tacoLuckyBalls<=0){toast("타코럭블이 없습니다.");return;}
+ data.tacoLuckyBalls--;
+ const r=Math.random()*100;
+ let w;
+ if(r<1.0)w={name:"타코 100",damage:100,oneShot:false,source:"타코럭블"};
+ else if(r<50.0)w={name:"타코 20",damage:20,oneShot:false,source:"타코럭블"};
+ else w={name:"타코 10",damage:10,oneShot:false,source:"타코럭블"};
+ addWeapon(w);
+ log("타코럭블 결과: "+w.name+"!");
+ save(); renderAll();
+}
+
+function playCoinFlip(choice){
+ const input=$("coinBet");
+ const bet=Math.floor(Number(input&&input.value));
+ if(!Number.isFinite(bet)||bet<1){toast("베팅은 1G 이상 입력하세요.");return;}
+ if(bet>data.gold){toast("보유 골드보다 많이 베팅할 수 없습니다.");return;}
+
+ data.gold-=bet;
+ const number=Math.floor(Math.random()*100)+1;
+ const result=number%2===1?"odd":"even";
+ const resultText=result==="odd"?"홀수":"짝수";
+ const win=result===choice;
+ const box=$("coinResult");
+
+ if(win){
+   data.gold+=bet*2;
+   if(box)box.innerHTML="결과: <b>"+number+" ("+resultText+")</b> · 적중! <span class='gold'>+"+(bet*2)+"G</span>";
+   log("홀짝 게임 적중! "+number+" "+resultText+" · "+(bet*2)+"G 획득");
+   toast("적중! +"+(bet*2)+"G");
+ }else{
+   if(box)box.innerHTML="결과: <b>"+number+" ("+resultText+")</b> · 실패! -"+bet+"G";
+   log("홀짝 게임 실패! "+number+" "+resultText+" · -"+bet+"G");
+   toast("실패! -"+bet+"G");
+ }
  save(); renderAll();
 }
 
@@ -1117,6 +1309,8 @@ function renderBag(){
     <div class="row" style="margin-top:12px">
       <span class="tag">시크릿 럭블 보유 ${data.secretLuckyBalls}개</span>
       <button onclick="openSecretLuckyBall()">시크릿 럭블 열기</button>
+      <span class="tag" style="background:#7c4a12">타코럭블 보유 ${data.tacoLuckyBalls}개</span>
+      <button onclick="openTacoLuckyBall()">타코럭블 열기</button>
     </div>
    </div>
    ${itemsHtml}`;
@@ -1711,6 +1905,16 @@ function startChallenge(){
 /* 도전 성공 시 일반 미니게임보다 큰 보상 */
 const normalFinishMini=finishMini;
 finishMini=function(win,score){
+ if(mini&&mini.scoreDuel){
+  submitMultiMiniScore(win?score:0);
+  if(miniTimer){clearInterval(miniTimer);miniTimer=null;}
+  if(reactionTimer){clearTimeout(reactionTimer);reactionTimer=null;}
+  mini=null;
+  setTimeout(()=>{
+   if($("miniArea"))$("miniArea").innerHTML=`<div class="panel"><h3>점수 제출 완료!</h3><p>내 점수: <b>${Math.max(0,Number(score)||0)}</b>점</p><p>상대방 결과를 기다리는 중...</p><button onclick="show('multi')">멀티플레이어로 돌아가기</button></div>`;
+  },100);
+  return;
+ }
  if(mini&&mini.challenge){
   if(miniTimer){clearInterval(miniTimer);miniTimer=null;}
   if(reactionTimer){clearTimeout(reactionTimer);reactionTimer=null;}
@@ -1922,6 +2126,22 @@ function unlock(id){
  save();
 }
 
+
+function checkAutomaticAchievements(){
+ const checks={
+  level5:()=>data.lv>=5, level10:()=>data.lv>=10, level20:()=>data.lv>=20,
+  gold500:()=>data.gold>=500, gold2000:()=>data.gold>=2000, gold10000:()=>data.gold>=10000,
+  power50:()=>data.power>=50, power100:()=>data.power>=100, power200:()=>data.power>=200,
+  click100:()=>data.click>=100, click500:()=>data.click>=500,
+  mini5:()=>data.miniWins>=5, mini20:()=>data.miniWins>=20,
+  region6:()=>data.lv>=20,
+  slime:()=>!!data.discovered["슬라임"], goblin:()=>!!data.discovered["고블린"], bat:()=>!!data.discovered["박쥐"],
+  golem:()=>!!data.discovered["골렘"], robot:()=>!!data.discovered["로봇"], ghost:()=>!!data.discovered["망령"],
+  scorpion:()=>!!data.discovered["전갈"], mummy:()=>!!data.discovered["미라"],
+  guardian:()=>!!data.discovered["수호자"], dragon:()=>!!data.discovered["용"]
+ };
+ for(const id in checks) if(!data.achievements[id] && checks[id]()) unlock(id);
+}
 function renderAchievements(){
  $("achievements").innerHTML=achievements.map((a,i)=>{
   const done=!!data.achievements[a[0]];
@@ -2046,8 +2266,306 @@ function skipAd(){
  finishAdView();
 }
 
+// ==================== 1 VS 1 온라인 멀티플레이어 ====================
+// PeerJS를 이용해 서로 다른 PC/휴대폰에서도 6자리 방 코드로 1 VS 1 연결
+let multiPeer=null;
+let multiConn=null;
+let multiRoom="";
+let multiId="";
+let multiName="";
+let multiRole="";
+let multiPlayers={};
+let multiDuel=null;
+let multiRewardApplied=false;
+let multiReady=false;
+let multiMiniDuel=null;
+let multiMiniRewardApplied=false;
+
+function multiRandomCode(){return String(Math.floor(100000+Math.random()*900000));}
+function multiSafeName(v){return String(v||"").replace(/[<>]/g,"").slice(0,12);}
+function multiStatus(t){const el=$("multiStatus");if(el)el.textContent=t;}
+function multiSend(msg){
+ if(!multiConn||!multiConn.open)return false;
+ try{multiConn.send(msg);return true;}catch(e){return false;}
+}
+function multiResetPeer(){
+ try{if(multiConn){multiConn.close();multiConn=null;}}catch(e){}
+ try{if(multiPeer){multiPeer.destroy();multiPeer=null;}}catch(e){}
+ multiReady=false;
+}
+function multiCreateRoom(){
+ if(typeof Peer==="undefined"){toast("온라인 멀티플레이어 연결 모듈을 불러오지 못했습니다. 인터넷 연결을 확인하세요.");return;}
+ if(multiPeer){toast("이미 멀티플레이어를 사용 중입니다.");return;}
+ multiName=multiSafeName($("multiName").value.trim())||("플레이어"+Math.floor(100+Math.random()*900));
+ const code=multiRandomCode();
+ multiRole="host"; multiRoom=code; multiId=code;
+ multiPlayers={}; multiDuel=null; multiRewardApplied=false;
+ multiPlayers["host"]={id:"host",name:multiName,lv:data.lv};
+ multiStatus("방을 만드는 중... 코드 "+code);
+ renderMulti();
+ multiPeer=new Peer(code,{debug:0});
+ multiPeer.on("open",id=>{
+  multiReady=true;
+  $("multiRoom").value=code;
+  $("multiCodeBox").style.display="block";
+  $("multiCode").textContent=code;
+  multiStatus("방 생성 완료! 상대방이 이 6자리 코드를 입력하면 바로 연결됩니다.");
+  multiChatAdd("시스템","온라인 1 VS 1 방이 생성되었습니다. 상대방을 기다리는 중...");
+ });
+ multiPeer.on("connection",conn=>{
+  if(multiConn&&multiConn.open){conn.close();return;}
+  multiConn=conn;
+  multiBindHostConnection();
+ });
+ multiPeer.on("error",err=>{
+  console.error(err);
+  if(err&&err.type==="unavailable-id"){
+   toast("방 코드가 이미 사용 중입니다. 다시 방을 만들어 주세요.");
+  }else toast("멀티 연결 오류: "+(err.type||"알 수 없는 오류"));
+  multiStatus("연결에 실패했습니다. 다시 방 만들기를 눌러 주세요.");
+ });
+ multiPeer.on("disconnected",()=>multiStatus("멀티 서버와 연결이 끊겼습니다. 재연결을 시도합니다..."));
+}
+function multiJoinRoom(){
+ if(typeof Peer==="undefined"){toast("온라인 멀티플레이어 연결 모듈을 불러오지 못했습니다. 인터넷 연결을 확인하세요.");return;}
+ if(multiPeer){toast("이미 멀티플레이어를 사용 중입니다.");return;}
+ const code=$("multiRoom").value.trim();
+ if(!/^\d{6}$/.test(code)){toast("주최자가 알려준 6자리 방 코드를 입력하세요!");return;}
+ multiName=multiSafeName($("multiName").value.trim())||("플레이어"+Math.floor(100+Math.random()*900));
+ multiRole="guest"; multiRoom=code; multiId="guest";
+ multiPlayers={}; multiDuel=null; multiRewardApplied=false;
+ multiStatus("방 "+code+"에 연결하는 중...");
+ renderMulti();
+ multiPeer=new Peer();
+ multiPeer.on("open",()=>{
+  multiConn=multiPeer.connect(code,{reliable:true});
+  multiConn.on("open",()=>{
+   multiReady=true;
+   multiSend({type:"join",name:multiName,lv:data.lv});
+   multiStatus("방에 연결되었습니다. 주최자의 응답을 기다리는 중...");
+   multiChatAdd("시스템","주최자에게 참가 요청을 보냈습니다.");
+  });
+  multiConn.on("error",()=>{toast("방에 연결할 수 없습니다. 코드가 맞는지 확인하세요.");multiStatus("방 연결 실패");});
+  multiConn.on("close",()=>multiRemoteLeft());
+  multiConn.on("data",multiReceiveOnline);
+ });
+ multiPeer.on("error",err=>{
+  console.error(err); toast("멀티 연결 오류: "+(err.type||"알 수 없는 오류")); multiStatus("연결 실패");
+ });
+}
+function multiBindHostConnection(){
+ multiConn.on("open",()=>{
+  multiReady=true;
+  multiConn.on("data",multiReceiveOnline);
+  multiConn.on("close",()=>multiRemoteLeft());
+  multiStatus("상대가 연결되었습니다. 대전을 준비합니다!");
+ });
+ multiConn.on("error",()=>{toast("상대와의 연결에 문제가 생겼습니다.");});
+}
+function multiReceiveOnline(m){
+ if(!m||typeof m!=="object")return;
+ if(m.type==="join"&&multiRole==="host"){
+  multiPlayers={
+   host:{id:"host",name:multiName,lv:data.lv},
+   guest:{id:"guest",name:multiSafeName(m.name)||"상대",lv:Number(m.lv)||1}
+  };
+  multiDuel={status:"battle",turn:"host",players:{
+   host:{id:"host",name:multiPlayers.host.name,lv:data.lv,hp:100,maxHp:100},
+   guest:{id:"guest",name:multiPlayers.guest.name,lv:multiPlayers.guest.lv,hp:100,maxHp:100}
+  },winner:null};
+  multiSend({type:"start",duel:multiDuel});
+  multiStatus("상대가 참가했습니다! 1 VS 1 대전 시작!");
+  multiChatAdd("시스템",multiPlayers.guest.name+"님이 참가했습니다. 대전을 시작합니다!");
+  renderMulti();
+ }else if(m.type==="start"&&multiRole==="guest"){
+  multiDuel=m.duel; multiPlayers={host:{...m.duel.players.host},guest:{...m.duel.players.guest}};
+  multiStatus("1 VS 1 대전 시작! 내 차례에 공격하세요.");
+  multiChatAdd("시스템","1 VS 1 대전이 시작되었습니다!");
+  renderMulti();
+ }else if(m.type==="attack"&&multiRole==="host"){
+  multiHostAttackOnline("guest",Number(m.damage)||1);
+ }else if(m.type==="state"){
+  multiDuel=m.duel;
+  if(m.duel&&m.duel.players){multiPlayers={host:{...m.duel.players.host},guest:{...m.duel.players.guest}};}
+  if(multiDuel&&multiDuel.status==="finished")multiFinishReward();
+  renderMulti();
+ }else if(m.type==="miniDuelPickRequest"&&multiRole==="host"){
+  if(!multiConn||!multiConn.open)return;
+  if(multiMiniDuel&&multiMiniDuel.status==="playing"){multiSend({type:"miniDuelBusy"});return;}
+  const hostGame=$("multiMiniGame")?$("multiMiniGame").value:"target";
+  const guestGame=multiMiniNames[m.game]?m.game:"target";
+  // 미니게임 선택권은 호스트 50% / 참가자 50%
+  const chooser=Math.random()<0.5?"host":"guest";
+  const game=chooser==="host"?hostGame:guestGame;
+  const round=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  multiMiniDuel={status:"playing",type:game,round,scores:{},finished:{},chooser};
+  multiMiniRewardApplied=false;
+  multiSend({type:"miniDuelStart",game,round,chooser});
+  renderMulti();
+  show("mini");
+  startMiniScoreDuel(game,round);
+  multiStatus((chooser==="host"?"호스트":"참가자")+"가 50% 확률로 선택권을 얻었습니다! "+(multiMiniNames[game]||game)+" 시작!");
+ }else if(m.type==="miniDuelStart"&&multiRole==="guest"){
+  multiMiniDuel={status:"playing",type:m.game,round:m.round,scores:{},finished:{},chooser:m.chooser||"host"}; multiMiniRewardApplied=false; renderMulti(); show("mini"); startMiniScoreDuel(m.game,m.round); multiStatus("미니게임 점수 대결! "+(multiMiniNames[m.game]||m.game)+"을 플레이하세요.");
+ }else if(m.type==="miniDuelBusy"){
+  toast("이미 미니게임 점수 대결이 진행 중입니다!");
+ }else if(m.type==="miniDuelScore"&&multiRole==="host"){
+  if(multiMiniDuel&&multiMiniDuel.status==="playing"&&m.round===multiMiniDuel.round){multiMiniDuel.scores.guest=Math.max(0,Number(m.score)||0);multiMiniDuel.finished.guest=true;finalizeMultiMiniDuelIfReady();}
+ }else if(m.type==="miniDuelResult"){
+  if(!multiMiniDuel||m.round!==multiMiniDuel.round)return;
+  multiMiniDuel.status="finished"; multiMiniDuel.scores={host:Number(m.scores.host)||0,guest:Number(m.scores.guest)||0}; multiMiniDuel.winner=m.winner; applyMultiMiniDuelReward(); renderMulti();
+ }else if(m.type==="chat"){
+  multiChatAdd(m.name||"상대",m.text||"");
+ }else if(m.type==="leave"){
+  multiRemoteLeft();
+ }
+}
+function multiRemoteLeft(){
+ multiStatus("상대가 나갔습니다.");
+ multiChatAdd("시스템","상대방과의 연결이 종료되었습니다.");
+ multiConn=null; multiDuel=null; multiPlayers={}; multiMiniDuel=null; multiMiniRewardApplied=false;
+ renderMulti();
+}
+function multiLeaveRoom(){
+ if(multiConn&&multiConn.open){try{multiConn.send({type:"leave"});}catch(e){} try{multiConn.close();}catch(e){}}
+ multiResetPeer();
+ multiRoom="";multiId="";multiRole="";multiPlayers={};multiDuel=null;multiRewardApplied=false;multiMiniDuel=null;multiMiniRewardApplied=false;
+ $("multiCodeBox").style.display="none";
+ multiStatus("방에 참가하지 않았습니다.");
+ renderMulti();
+}
+function multiCopyCode(){
+ const code=multiRoom;if(!code)return;
+ if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(code).then(()=>toast("방 코드가 복사되었습니다!"));
+ else prompt("방 코드를 복사하세요",code);
+}
+/* ==================== 미니게임 점수 1 VS 1 ==================== */
+const multiMiniNames={target:"움직이는 표적",memory:"카드 기억하기",math:"스피드 암산",reaction:"신호 반응",guess:"숫자 추리",tap:"탭 러시",pattern:"패턴 기억",timing:"정확한 타이밍",door:"안전한 문",chest:"황금 상자"};
+function startMultiMiniDuel(){
+ if(!multiReady||!multiConn||!multiConn.open){toast("먼저 상대와 1 VS 1 방을 연결하세요!");return;}
+ if(multiMiniDuel&&multiMiniDuel.status==="playing"){toast("이미 미니게임 점수 대결이 진행 중입니다!");return;}
+ const type=$("multiMiniGame")?$("multiMiniGame").value:"target";
+ // 버튼을 누른 쪽의 선택을 주최자에게 보내고, 주최자가 호스트/참가자 중 50:50으로 선택권을 결정한다.
+ if(multiRole==="host"){
+  const chooser=Math.random()<0.5?"host":"guest";
+  const guestGame=type;
+  const game=chooser==="host"?type:guestGame;
+  const round=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  multiMiniDuel={status:"playing",type:game,round,scores:{},finished:{},chooser};
+  multiMiniRewardApplied=false;
+  multiSend({type:"miniDuelStart",game,round,chooser});
+  renderMulti();
+  show("mini");
+  startMiniScoreDuel(game,round);
+  multiStatus((chooser==="host"?"호스트":"참가자")+" 선택! 50% 확률로 결정된 미니게임: "+(multiMiniNames[game]||game));
+ }else{
+  multiSend({type:"miniDuelPickRequest",game:type});
+  multiStatus("호스트가 50% 확률로 선택권을 결정하는 중...");
+ }
+}
+function startMiniScoreDuel(type,round){
+ clearMini(); mini={type,score:0,finished:false,scoreDuel:true,duelRound:round};
+ const starts={target:startTarget,memory:startMemory,math:startMath,reaction:startReaction,guess:startGuess,tap:startTap,pattern:startPattern,timing:startTiming,door:startDoor,chest:startChest};
+ if(starts[type])starts[type](); window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
+}
+function submitMultiMiniScore(score){
+ if(!multiMiniDuel||multiMiniDuel.status!=="playing"||!mini)return;
+ const me=multiRole==="host"?"host":"guest"; if(multiMiniDuel.round!==mini.duelRound||multiMiniDuel.finished[me])return;
+ const n=Math.max(0,Number(score)||0); multiMiniDuel.scores[me]=n; multiMiniDuel.finished[me]=true; renderMulti();
+ if(multiRole==="guest"){multiSend({type:"miniDuelScore",round:multiMiniDuel.round,score:n}); multiStatus("내 점수 "+n+"점 전송 완료! 상대 점수를 기다리는 중...");}
+ else finalizeMultiMiniDuelIfReady();
+}
+function finalizeMultiMiniDuelIfReady(){
+ if(multiRole!=="host"||!multiMiniDuel||multiMiniDuel.status!=="playing")return;
+ const a=multiMiniDuel.scores.host,b=multiMiniDuel.scores.guest; if(a==null||b==null)return;
+ multiMiniDuel.status="finished"; multiMiniDuel.winner=a===b?"draw":(a>b?"host":"guest");
+ multiSend({type:"miniDuelResult",round:multiMiniDuel.round,scores:multiMiniDuel.scores,winner:multiMiniDuel.winner,game:multiMiniDuel.type});
+ applyMultiMiniDuelReward(); renderMulti();
+}
+function applyMultiMiniDuelReward(){
+ if(!multiMiniDuel||multiMiniDuel.status!=="finished"||multiMiniRewardApplied)return; multiMiniRewardApplied=true;
+ const me=multiRole==="host"?"host":"guest",w=multiMiniDuel.winner;
+ if(w==="draw"){addGold(50);gainExp(20);toast("미니게임 점수 대결 무승부! +50G");log("미니게임 점수 대결 무승부! +50G");}
+ else if(w===me){addGold(100);gainExp(40);toast("미니게임 점수 대결 승리! +100G");log("미니게임 점수 대결 승리! +100G / EXP 40");}
+ else{addGold(30);gainExp(10);toast("미니게임 점수 대결 패배 · 참가 보상 +30G");log("미니게임 점수 대결 패배 · 참가 보상 +30G");}
+ save();
+}
+
+function multiStartBattle(){
+ if(multiRole!=="host"){toast("주최자만 시작할 수 있습니다.");return;}
+ if(multiDuel&&multiDuel.status==="battle"){toast("이미 대전 중입니다!");return;}
+ toast("상대가 참가하면 자동으로 1 VS 1이 시작됩니다.");
+}
+function multiAttack(){
+ if(!multiDuel||multiDuel.status!=="battle"){toast("먼저 상대방과 연결하세요!");return;}
+ const me=multiRole==="host"?"host":"guest";
+ if(multiDuel.turn!==me){toast("지금은 상대방의 차례입니다!");return;}
+ const other=me==="host"?"guest":"host";
+ const weapon=getEquippedWeapon();
+ let damage=weapon&&weapon.oneShot?multiDuel.players[other].hp:(weapon?weapon.damage:Math.max(1,data.power+Math.floor(Math.random()*10)));
+ damage=Math.max(1,Math.floor(damage));
+ if(multiRole==="host")multiHostAttackOnline("host",damage);
+ else multiSend({type:"attack",damage});
+}
+function multiHostAttackOnline(attackerId,damage){
+ if(multiRole!=="host"||!multiDuel||multiDuel.status!=="battle")return;
+ if(multiDuel.turn!==attackerId)return;
+ const targetId=attackerId==="host"?"guest":"host";
+ const target=multiDuel.players[targetId];if(!target)return;
+ target.hp=Math.max(0,target.hp-Math.max(1,Math.floor(damage)));
+ if(target.hp<=0){target.hp=0;multiDuel.status="finished";multiDuel.winner=attackerId;multiDuel.turn=null;}
+ else multiDuel.turn=targetId;
+ multiPlayers={host:{...multiDuel.players.host},guest:{...multiDuel.players.guest}};
+ multiSend({type:"state",duel:multiDuel});
+ if(multiDuel.status==="finished")multiFinishReward();
+ renderMulti();
+}
+function multiFinishReward(){
+ if(!multiDuel||multiDuel.status!=="finished"||multiRewardApplied)return;
+ multiRewardApplied=true;
+ const me=multiRole==="host"?"host":"guest";
+ if(multiDuel.winner===me){addGold(100);gainExp(50);data.kills++;log("온라인 1 VS 1 승리! 100G와 EXP 50을 획득했습니다.");toast("1 VS 1 승리! +100G +EXP50");}
+ else{log("온라인 1 VS 1 패배...");toast("1 VS 1 패배");}
+ save();renderAll();
+}
+function multiSendChat(){
+ if(!multiRoom||!multiConn||!multiConn.open){toast("먼저 1 VS 1 방에 연결하세요!");return;}
+ const el=$("multiMsg"),text=el.value.trim();if(!text)return;
+ multiChatAdd(multiName,text);multiSend({type:"chat",name:multiName,text});el.value="";
+}
+function multiChatAdd(name,text){
+ const box=$("multiChat");if(!box)return;
+ const d=document.createElement("div");d.innerHTML="<b>"+String(name).replace(/[<>]/g,"")+":</b> "+String(text).replace(/[<>]/g,"");box.appendChild(d);box.scrollTop=box.scrollHeight;
+}
+function renderMulti(){
+ const p=$("multiPlayers"),e=$("multiEnemy"),t=$("multiTurn"),sb=$("multiStartBtn"),ab=$("multiAttackBtn"),cb=$("multiCodeBox"),code=$("multiCode");
+ if(!p||!e)return;
+ const vals=multiDuel&&multiDuel.players?Object.values(multiDuel.players):Object.values(multiPlayers);
+ p.innerHTML=vals.length?vals.map(x=>"<div style='padding:7px 0'><b>"+String(x.name).replace(/[<>]/g,"")+"</b> · Lv."+(x.lv||1)+(x.id===(multiRole==="host"?"host":"guest")?" <span class='muted'>(나)</span>":"")+(x.hp!=null?" · HP "+x.hp:"" )+"</div>").join(""):"없음";
+ if(multiRole==="host"&&multiRoom){cb.style.display="block";code.textContent=multiRoom;}else cb.style.display="none";
+ if(!multiRoom||!multiDuel){e.innerHTML="6자리 방 코드를 만들거나 코드를 입력해 참가하세요.";t.textContent="";}
+ else{
+  e.innerHTML=Object.values(multiDuel.players||{}).map(x=>"<div style='margin:8px 0'><b>"+String(x.name).replace(/[<>]/g,"")+"</b><br><div style='height:12px;background:#202b4c;border-radius:8px;overflow:hidden'><div style='height:100%;width:"+Math.max(0,Math.min(100,x.hp/x.maxHp*100))+"%;background:#ff4d6d'></div></div>HP "+x.hp+" / "+x.maxHp+(x.id===multiDuel.winner?"<b> · 승리</b>":"")+"</div>").join("");
+  if(multiDuel.status==="battle")t.textContent=multiDuel.turn===(multiRole==="host"?"host":"guest")?"⚔ 내 차례! 공격하세요!":"상대방의 차례입니다.";
+  else t.textContent=multiDuel.winner===(multiRole==="host"?"host":"guest")?"🏆 승리!":"대전 종료";
+ }
+ if(sb)sb.style.display="none";
+ if(ab)ab.disabled=!(multiDuel&&multiDuel.status==="battle"&&multiDuel.turn===(multiRole==="host"?"host":"guest")&&multiReady);
+ const ms=$("multiMiniScoreStatus"),mss=$("multiMiniScores"),mb=$("multiMiniStartBtn"),sel=$("multiMiniGame");
+ if(ms&&mss){
+  if(!multiMiniDuel){ms.textContent=multiReady?"둘 중 누구나 버튼을 누를 수 있습니다. 호스트 50% / 참가자 50% 확률로 선택권이 결정됩니다.":"상대와 연결한 뒤 미니게임 종목을 선택하세요.";mss.innerHTML="";}
+  else{const nm=multiMiniNames[multiMiniDuel.type]||multiMiniDuel.type,me=multiRole==="host"?"host":"guest",opp=me==="host"?"guest":"host",hs=multiMiniDuel.scores.host,gs=multiMiniDuel.scores.guest;
+   if(multiMiniDuel.status==="playing"){ms.textContent=nm+" 점수 대결 진행 중";mss.innerHTML="<b>내 점수:</b> "+(multiMiniDuel.scores[me]??"플레이 중")+" · <b>상대:</b> "+(multiMiniDuel.scores[opp]??"플레이 중");}
+   else{const wt=multiMiniDuel.winner==="draw"?"무승부!":(multiMiniDuel.winner===me?"🏆 내가 승리!":"상대 승리!");ms.textContent=nm+" 점수 대결 종료 · "+wt;mss.innerHTML="<b>주최자:</b> "+(hs??0)+"점 · <b>상대:</b> "+(gs??0)+"점";}
+  }
+ }
+ if(mb)mb.disabled=!(multiReady&&multiConn&&multiConn.open&&(!multiMiniDuel||multiMiniDuel.status!=="playing"));
+ if(sel)sel.disabled=false;
+}
+
 function renderAll(){
   updateAdminAbuse();
+ checkAutomaticAchievements();
  checkLateAchievements();
  checkAdAchievements();
  renderHeader();
@@ -2073,7 +2591,7 @@ renderAll();
 show("home");
 if(!data.tutorialDone) setTimeout(startTutorial,300);
 scheduleNextAd();
-setInterval(()=>{updateAdminAbuse();renderAll();},15000);
+setInterval(()=>{updateAdminAbuse();updateTacoAdminAbuse();renderAll();},15000);
 </script>
 
 </body>
